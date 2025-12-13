@@ -59,7 +59,7 @@ def run_servers():
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT
     )
-    
+        
     print("\n" + "="*60)
     print("✅ Both servers are running!")
     print("="*60)
