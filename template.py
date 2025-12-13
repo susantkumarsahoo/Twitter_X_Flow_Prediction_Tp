@@ -72,7 +72,6 @@ list_of_files = [
     f"{project_name}/models/factory.py",
     f"{project_name}/models/deployer.py",
 
-
     # Pipelines
     f"{project_name}/pipelines/__init__.py",
     f"{project_name}/pipelines/ingestion_pipeline.py",
@@ -110,8 +109,11 @@ list_of_files = [
     f"{project_name}/utils/registry_helper.py",
     f"{project_name}/utils/evaluation_helper.py",
     f"{project_name}/utils/deployment_helper.py",
-   
+    f"{project_name}/utils/fastapi_helper.py",
+    f"{project_name}/utils/streamlit_helper.py",
+    f"{project_name}/utils/flask_helper.py",
 
+   
     # Visualization
     f"{project_name}/visualization/__init__.py",
     f"{project_name}/visualization/plots.py",
@@ -132,7 +134,7 @@ list_of_files = [
     f"{project_name}/monitoring/model_drift.py",
 
     # Outside project_name
-    f"{cicd_folder}/'pipeline.yaml'",
+    f"{cicd_folder}/pipeline.yaml",
     f"{configs_folder}/project_configs.yaml",
     f"{configs_folder}/model_configs.yaml",
     f"{data_folder}/raw/.gitkeep",
@@ -169,6 +171,7 @@ list_of_files = [
 #   "README.md",
     ".env",
     "setup.py",
+    "pyproject.toml",
 #   ".gitignore",
     ".dockerignore",
     "Dockerfile",
