@@ -2,12 +2,34 @@ import streamlit as st
 import requests
 import pandas as pd
 import plotly.express as px
+import time
+import numpy as np
 
 st.set_page_config(page_title="Sales Dashboard", layout="wide")
 
 API_URL = "http://localhost:8000"
 
 st.title("📊 Sales Analysis Dashboard")
+
+
+with st.sidebar:
+    with st.echo():
+        st.write("This code will be printed to the sidebar.")
+
+    with st.spinner("Loading..."):
+        time.sleep(5)
+    st.success("Done!")
+
+import streamlit as st
+
+with st.container():
+    st.write("This is inside the container")
+
+    # You can call any Streamlit command, including custom components:
+    st.bar_chart(np.random.randn(50, 3))
+
+st.write("This is outside the container")
+
 
 # Fetch data
 try:
