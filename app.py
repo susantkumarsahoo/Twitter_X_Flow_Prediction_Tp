@@ -13,20 +13,17 @@ API_URL = "http://localhost:8000"
 st.set_page_config(page_title="Sales Dashboard - Energy Consumption", layout="wide")
 
 # Custom header using Markdown + HTML
-st.markdown(
+
+# Sidebar
+st.sidebar.markdown(
     """
-    <div style="background-color:#1E3A8A;padding:15px;border-radius:5px">
-        <h2 style="color:white;text-align:center;">⚡ Energy Consumption Dashboard</h2>
+    <div style="background-color:#1E3A8A;padding:10px;border-radius:5px">
+        <h3 style="color:white;text-align:center;">⚡ Energy Consumption Dashboard</h3>
     </div>
     """,
     unsafe_allow_html=True
 )
 
-
-with ui.header(elevated=True).classes("bg-blue-800 text-white"):
-        ui.label("⚡ Energy Consumption Dashboard").classes("text-2xl font-bold")
-
-# Sidebar
 st.sidebar.title("📊 Dashboard Menu")
 page = st.sidebar.radio("Select Option:", ["Analysis", "Statistical Calculation"])
 
@@ -56,7 +53,19 @@ df['date'] = pd.to_datetime(df['date'])
 
 # Page 1: Analysis
 if page == "Analysis":
+
+
+    st.markdown(
+        """
+        <div style="background-color:#1E3A8A;padding:10px;border-radius:5px">
+            <h2 style="color:white;text-align:center;">⚡ Energy Consumption Dashboard</h2>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
     st.title("📈 Sales Analysis")
+
     
     # Summary metrics
     col1, col2, col3, col4 = st.columns(4)
@@ -67,7 +76,29 @@ if page == "Analysis":
     
 # Page 2: Statistical Calculation
 elif page == "Statistical Calculation":
+
+    st.markdown(
+        """
+        <style>
+            .top-header {
+                background-color: #1E3A8A;
+                padding: 15px;
+                margin: 0;
+                border-radius: 0;
+                position: relative;
+                top: -2.5em;
+            }
+        </style>
+        <div class="top-header">
+            <h2 style="color:white;text-align:center;">⚡ Energy Consumption Dashboard</h2>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+
     st.title("📊 Statistical Calculations")
+
     
     st.subheader("Overall Statistics")
     col1, col2 = st.columns(2)
@@ -75,16 +106,13 @@ elif page == "Statistical Calculation":
     with col1:
         st.write("**Sales Statistics:**")
 
-    
     with col2:
         st.write("**Range & Quartiles:**")
 
-    
     # Category-wise statistics (cached)
     st.subheader("Category-wise Statistics")
 
-
-    
+ 
     # Distribution plot
     st.subheader("Sales Distribution")
     fig = px.histogram(df, x='sales', nbins=20, title='Sales Distribution')
