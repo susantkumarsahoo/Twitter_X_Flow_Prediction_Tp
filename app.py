@@ -3,7 +3,9 @@ import requests
 import pandas as pd
 import plotly.express as px
 import numpy as np
-from nicegui import ui
+import matplotlib.pyplot as plt
+import plotly.express as px
+from src.utils.streamlit_helper import sales_distribution_plots, display_sales_summary
 
 
 st.set_page_config(page_title="Sales Dashboard", layout="wide")
@@ -68,11 +70,7 @@ if page == "Analysis":
 
     
     # Summary metrics
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Total Sales", f"${summary['total_sales']:,}")
-    col2.metric("Average Sales", f"${summary['avg_sales']:.0f}")
-    col3.metric("Max Sales", f"${summary['max_sales']:,}")
-    col4.metric("Min Sales", f"${summary['min_sales']:,}")
+    display_sales_summary(summary)
     
 # Page 2: Statistical Calculation
 elif page == "Statistical Calculation":
@@ -111,16 +109,4 @@ elif page == "Statistical Calculation":
 
     # Category-wise statistics (cached)
     st.subheader("Category-wise Statistics")
-
- 
-    # Distribution plot
-    st.subheader("Sales Distribution")
-    fig = px.histogram(df, x='sales', nbins=20, title='Sales Distribution')
-    fig.update_layout(height=350)
-    st.plotly_chart(fig, use_container_width=True)
-    
-    # Box plot
-    st.subheader("Sales Box Plot by Category")
-    fig2 = px.box(df, x='category', y='sales', title='Sales Distribution by Category')
-    fig2.update_layout(height=350)
-    st.plotly_chart(fig2, use_container_width=True)
+    sales_distribution_plots(df)
