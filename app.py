@@ -5,9 +5,11 @@ import plotly.express as px
 import numpy as np
 import matplotlib.pyplot as plt
 import plotly.express as px
-from src.utils.streamlit_helper import sales_distribution_plots, display_sales_summary, fetch_all_data
 
-API_URL = "http://localhost:8000"
+
+
+# streamlit run app.py
+# API_URL = "http://localhost:8000"
 
 import streamlit as st
 import pandas as pd
@@ -47,12 +49,17 @@ with st.sidebar:
  
     # ========== MAIN NAVIGATION ==========
     st.header("🧭 CRM Navigation")
+
     dashboard_type = st.radio(
         "Select Dashboard",
-        ["📈 Analysis Dashboard", "📊 Statistical Dashboard", "🔮 Twitter Flow Prediction Dashboard","AI Chatbot"],
+        [
+            "📈 Analysis Dashboard",
+            "📊 Statistical Dashboard",
+            "🔮 Twitter Flow Prediction Dashboard",
+            "🤖 AI Chatbot"
+        ],
         label_visibility="collapsed"
     )
-    
     # ========== DATA SOURCE CONFIGURATION ==========
     st.header("📁 Data Source")
 
@@ -88,18 +95,52 @@ with st.sidebar:
 # MAIN CONTENT AREA
 # ============================================
 
-st.title(dashboard_type.split(" ")[1] + " " + dashboard_type.split(" ")[2])
+# ============================================
+# MAIN CONTENT AREA
+# ============================================
 
-# Placeholder for dashboard content
-st.markdown("### Dashboard Content")
-# Sample visualization placeholder
-tab1, tab2, tab3 = st.tabs(["📈 Visualizations", "📋 Data Table", "📊 Summary"])
+# Show the dashboard title directly
+st.title(dashboard_type)
 
-with tab1:
-    st.write("Charts and graphs will be displayed here")
+# ---------------- Analysis Dashboard ----------------
+if dashboard_type == "📈 Analysis Dashboard":
+    st.markdown("### Dashboard Content")
+    tab1, tab2, tab3 = st.tabs(["📈 Visualizations", "📋 Data Table", "📊 Summary"])
 
-with tab2:
-    st.write("Raw data table will be displayed here")
+    with tab1:
+        st.write("Charts and graphs will be displayed here")
 
-with tab3:
-    st.write("Summary statistics will be displayed here")
+    with tab2:
+        st.write("Raw data table will be displayed here")
+
+    with tab3:
+        st.write("Summary statistics will be displayed here")
+
+# ---------------- Statistical Dashboard ----------------
+elif dashboard_type == "📊 Statistical Dashboard":
+    st.markdown("### Statistical Insights")
+    tab1, tab2 = st.tabs(["📊 Descriptive Stats", "📉 Advanced Models"])
+
+    with tab1:
+        st.write("Descriptive statistics and distributions will be displayed here")
+
+    with tab2:
+        st.write("Advanced statistical models and tests will be displayed here")
+
+# ---------------- Twitter Flow Prediction Dashboard ----------------
+elif dashboard_type == "🔮 Twitter Flow Prediction Dashboard":
+    st.markdown("### Twitter Flow Predictions")
+    tab1, tab2 = st.tabs(["🔮 Predictions", "📊 Trend Analysis"])
+
+    with tab1:
+        st.write("Prediction results will be displayed here")
+
+    with tab2:
+        st.write("Trend analysis and sentiment graphs will be displayed here")
+
+# ---------------- AI Chatbot ----------------
+elif dashboard_type == "🤖 AI Chatbot":
+    st.markdown("### Chatbot Interface")
+    st.chat_input("Ask me anything...")
+    st.write("Chat responses will appear here")
+  
