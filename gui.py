@@ -59,6 +59,9 @@ def main_dashboard():
             ui.label("Daily Avg")
             ui.label(f"{df['total_consumption'].mean():.1f} kWh").classes("text-xl")
 
+
+
+
 # -------------------------------------------------
 # Mount NiceGUI on FastAPI
 # -------------------------------------------------
