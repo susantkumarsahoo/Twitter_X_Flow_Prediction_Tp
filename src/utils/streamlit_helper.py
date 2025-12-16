@@ -43,3 +43,32 @@ def display_sales_summary(summary: dict):
     col2.metric("Average Sales", f"${summary['avg_sales']:.0f}")
     col3.metric("Max Sales", f"${summary['max_sales']:,}")
     col4.metric("Min Sales", f"${summary['min_sales']:,}")
+
+
+
+import requests
+import streamlit as st
+
+@st.cache_data(ttl=300)
+def fetch_all_data(api_url: str):
+    """
+    Fetch all data from API with caching.
+
+    Parameters:
+        api_url (str): Base URL of the API (e.g., "https://example.com/api")
+
+    Returns:
+        tuple: (data, summary, category_stats, error)
+            - data: JSON response from /data
+            - summary: JSON response from /summary
+            - category_stats: JSON response from /category-stats
+            - error: error message string if any exception occurs, else None
+    """
+    try:
+        data = requests.get(f"{api_url}/data", timeout=5).json()
+        summary = requests.get(f"{api_url}/summary", timeout=5).json()
+        category_stats = requests.get(f"{api_url}/category-stats", timeout=5).json()
+        return data, summary, category_stats, None
+    except Exception as e:
+        return None, None, None, str(e)
+

@@ -5,108 +5,263 @@ import plotly.express as px
 import numpy as np
 import matplotlib.pyplot as plt
 import plotly.express as px
-from src.utils.streamlit_helper import sales_distribution_plots, display_sales_summary
-
-
-st.set_page_config(page_title="Sales Dashboard", layout="wide")
+from src.utils.streamlit_helper import sales_distribution_plots, display_sales_summary, fetch_all_data
 
 API_URL = "http://localhost:8000"
 
-st.set_page_config(page_title="Sales Dashboard - Energy Consumption", layout="wide")
+import streamlit as st
+import pandas as pd
+from datetime import datetime, timedelta
 
-# Custom header using Markdown + HTML
-
-# Sidebar
-st.sidebar.markdown(
-    """
-    <div style="background-color:#1E3A8A;padding:10px;border-radius:5px">
-        <h3 style="color:white;text-align:center;">⚡ Energy Consumption Dashboard</h3>
-    </div>
-    """,
-    unsafe_allow_html=True
+# Set page configuration
+st.set_page_config(
+    page_title="Analytics Dashboard",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-st.sidebar.title("📊 Dashboard Menu")
-page = st.sidebar.radio("Select Option:", ["Analysis", "Statistical Calculation"])
+# Custom CSS for better sidebar styling
+st.markdown("""
+    <style>
+    .sidebar .sidebar-content {
+        background-color: #f8f9fa;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# Cache data fetching
-@st.cache_data(ttl=300)
-def fetch_all_data():
-    """Fetch all data from API with caching"""
-    try:
-        data = requests.get(f"{API_URL}/data", timeout=5).json()
-        summary = requests.get(f"{API_URL}/summary", timeout=5).json()
-        category_stats = requests.get(f"{API_URL}/category-stats", timeout=5).json()
-        return data, summary, category_stats, None
-    except Exception as e:
-        return None, None, None, str(e)
+# ============================================
+# SIDEBAR CONFIGURATION
+# ============================================
 
-# Fetch data once
-data, summary, category_stats, error = fetch_all_data()
-
-if error:
-    st.error(f"Error connecting to API: {error}")
-    st.info("Make sure FastAPI backend is running on http://localhost:8000")
-    st.stop()
-
-# Convert to DataFrame once
-df = pd.DataFrame(data)
-df['date'] = pd.to_datetime(df['date'])
-
-# Page 1: Analysis
-if page == "Analysis":
-
-
-    st.markdown(
-        """
-        <div style="background-color:#1E3A8A;padding:10px;border-radius:5px">
-            <h2 style="color:white;text-align:center;">⚡ Energy Consumption Dashboard</h2>
-        </div>
-        """,
-        unsafe_allow_html=True
+with st.sidebar:
+    st.title("📊 Dashboard Control Panel")
+    st.markdown("---")
+    
+    # ========== MAIN NAVIGATION ==========
+    st.header("🧭 Navigation")
+    dashboard_type = st.radio(
+        "Select Dashboard",
+        ["📈 Analysis Dashboard", "📊 Statistical Dashboard", "🔮 Prediction Dashboard"],
+        label_visibility="collapsed"
     )
-
-    st.title("📈 Sales Analysis")
-
+    st.markdown("---")
     
-    # Summary metrics
-    display_sales_summary(summary)
-    
-# Page 2: Statistical Calculation
-elif page == "Statistical Calculation":
-
-    st.markdown(
-        """
-        <style>
-            .top-header {
-                background-color: #1E3A8A;
-                padding: 15px;
-                margin: 0;
-                border-radius: 0;
-                position: relative;
-                top: -2.5em;
-            }
-        </style>
-        <div class="top-header">
-            <h2 style="color:white;text-align:center;">⚡ Energy Consumption Dashboard</h2>
-        </div>
-        """,
-        unsafe_allow_html=True
+    # ========== DATA SOURCE CONFIGURATION ==========
+    st.header("📁 Data Source")
+    data_source = st.selectbox(
+        "Data Source Type",
+        ["Upload File", "Database Connection", "API Endpoint", "Sample Data"]
     )
     
-
-    st.title("📊 Statistical Calculations")
-
+    if data_source == "Upload File":
+        uploaded_file = st.file_uploader(
+            "Upload your data",
+            type=['csv', 'xlsx', 'json'],
+            help="Supported formats: CSV, Excel, JSON"
+        )
+    elif data_source == "Database Connection":
+        db_type = st.selectbox("Database Type", ["PostgreSQL", "MySQL", "MongoDB", "SQLite"])
+        st.text_input("Connection String", type="password")
+    elif data_source == "API Endpoint":
+        st.text_input("API URL")
+        st.text_input("API Key", type="password")
     
-    st.subheader("Overall Statistics")
-    col1, col2 = st.columns(2)
-      
-    with col1:
-        st.write("**Sales Statistics:**")
+    st.markdown("---")
+    
+    # ========== DATE RANGE FILTER ==========
+    st.header("📅 Date Range")
+    date_filter_type = st.radio(
+        "Filter Type",
+        ["Preset Range", "Custom Range"],
+        horizontal=True
+    )
+    
+    if date_filter_type == "Preset Range":
+        preset = st.selectbox(
+            "Select Period",
+            ["Last 7 Days", "Last 30 Days", "Last 90 Days", "Last 6 Months", "Last Year", "All Time"]
+        )
+    else:
+        col1, col2 = st.columns(2)
+        with col1:
+            start_date = st.date_input("From", datetime.now() - timedelta(days=30))
+        with col2:
+            end_date = st.date_input("To", datetime.now())
+    
+    st.markdown("---")
+    
+    # ========== DASHBOARD-SPECIFIC FEATURES ==========
+    if "Analysis" in dashboard_type:
+        st.header("🔍 Analysis Options")
+        analysis_type = st.multiselect(
+            "Select Analysis Types",
+            ["Trend Analysis", "Comparative Analysis", "Cohort Analysis", "Funnel Analysis", "Segmentation"],
+            default=["Trend Analysis"]
+        )
+        
+        metrics = st.multiselect(
+            "Key Metrics",
+            ["Revenue", "Users", "Conversions", "Engagement", "Retention", "Churn"],
+            default=["Revenue", "Users"]
+        )
+        
+        grouping = st.selectbox(
+            "Group By",
+            ["Day", "Week", "Month", "Quarter", "Year"]
+        )
+    
+    elif "Statistical" in dashboard_type:
+        st.header("📐 Statistical Options")
+        stat_methods = st.multiselect(
+            "Statistical Methods",
+            ["Descriptive Statistics", "Correlation Analysis", "Hypothesis Testing", 
+             "Distribution Analysis", "Outlier Detection", "Time Series Decomposition"],
+            default=["Descriptive Statistics"]
+        )
+        
+        confidence_level = st.slider(
+            "Confidence Level (%)",
+            min_value=90,
+            max_value=99,
+            value=95,
+            step=1
+        )
+        
+        visualization = st.selectbox(
+            "Primary Visualization",
+            ["Box Plot", "Histogram", "Scatter Plot", "Heatmap", "QQ Plot"]
+        )
+    
+    elif "Prediction" in dashboard_type:
+        st.header("🔮 Prediction Options")
+        model_type = st.selectbox(
+            "Model Type",
+            ["Linear Regression", "Time Series (ARIMA)", "Random Forest", 
+             "XGBoost", "Neural Network", "Ensemble"]
+        )
+        
+        forecast_horizon = st.slider(
+            "Forecast Horizon (days)",
+            min_value=1,
+            max_value=365,
+            value=30,
+            step=1
+        )
+        
+        features = st.multiselect(
+            "Feature Selection",
+            ["Historical Data", "Seasonality", "External Factors", "Trends", "Cyclical Patterns"],
+            default=["Historical Data", "Seasonality"]
+        )
+        
+        st.checkbox("Enable Auto-tuning", value=True)
+        st.checkbox("Show Confidence Intervals", value=True)
+    
+    st.markdown("---")
+    
+    # ========== FILTERS ==========
+    st.header("🔧 Filters")
+    with st.expander("Advanced Filters", expanded=False):
+        category_filter = st.multiselect(
+            "Categories",
+            ["Category A", "Category B", "Category C", "Category D"]
+        )
+        
+        region_filter = st.multiselect(
+            "Regions",
+            ["North America", "Europe", "Asia", "South America", "Africa"]
+        )
+        
+        value_range = st.slider(
+            "Value Range",
+            min_value=0,
+            max_value=1000,
+            value=(0, 1000)
+        )
+    
+    st.markdown("---")
+    
+    # ========== VISUALIZATION SETTINGS ==========
+    st.header("🎨 Visualization")
+    chart_theme = st.selectbox(
+        "Theme",
+        ["Default", "Dark", "Light", "Colorblind-Friendly"]
+    )
+    
+    chart_types = st.multiselect(
+        "Chart Types",
+        ["Line Chart", "Bar Chart", "Area Chart", "Pie Chart", "Scatter Plot", "Heatmap"],
+        default=["Line Chart", "Bar Chart"]
+    )
+    
+    show_legend = st.checkbox("Show Legend", value=True)
+    show_grid = st.checkbox("Show Grid", value=True)
+    
+    st.markdown("---")
+    
+    # ========== EXPORT OPTIONS ==========
+    st.header("💾 Export")
+    export_format = st.selectbox(
+        "Export Format",
+        ["PDF Report", "Excel Workbook", "CSV Data", "JSON", "PowerPoint"]
+    )
+    
+    if st.button("📥 Export Dashboard", use_container_width=True):
+        st.success("Export initiated! Download will start shortly.")
+    
+    st.markdown("---")
+    
+    # ========== SETTINGS & INFO ==========
+    with st.expander("⚙️ Settings"):
+        st.checkbox("Auto-refresh Data", value=False)
+        refresh_interval = st.number_input("Refresh Interval (seconds)", min_value=10, max_value=3600, value=60)
+        st.checkbox("Enable Notifications", value=True)
+        st.checkbox("Dark Mode", value=False)
+    
+    with st.expander("ℹ️ Info"):
+        st.info("""
+        **Dashboard Version:** 2.0
+        
+        **Last Updated:** {}
+        
+        **Data Points:** -
+        
+        **Status:** ✅ Connected
+        """.format(datetime.now().strftime("%Y-%m-%d %H:%M")))
+    
+    st.markdown("---")
+    st.caption("© 2024 Analytics Dashboard | v2.0")
 
-    with col2:
-        st.write("**Range & Quartiles:**")
+# ============================================
+# MAIN CONTENT AREA
+# ============================================
 
-    # Category-wise statistics (cached)
-    st.subheader("Category-wise Statistics")
-    sales_distribution_plots(df)
+st.title(dashboard_type.split(" ")[1] + " " + dashboard_type.split(" ")[2])
+
+# Display selected configuration
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.metric("Data Source", data_source)
+with col2:
+    st.metric("Active Filters", "0")
+with col3:
+    st.metric("Last Updated", datetime.now().strftime("%H:%M:%S"))
+
+st.info("👈 Use the sidebar to configure your dashboard settings and filters")
+
+# Placeholder for dashboard content
+st.markdown("### Dashboard Content")
+st.write("Your visualizations and analysis will appear here based on sidebar configurations.")
+
+# Sample visualization placeholder
+tab1, tab2, tab3 = st.tabs(["📈 Visualizations", "📋 Data Table", "📊 Summary"])
+
+with tab1:
+    st.write("Charts and graphs will be displayed here")
+
+with tab2:
+    st.write("Raw data table will be displayed here")
+
+with tab3:
+    st.write("Summary statistics will be displayed here")
