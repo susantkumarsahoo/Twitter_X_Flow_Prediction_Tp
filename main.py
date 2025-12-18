@@ -1,8 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import pandas as pd
 import numpy as np
+from src.constants.paths import dataset_path
+from src.visualization.dashboard import plot_missing_values
+import json
 
+# main.py
 app = FastAPI()
 
 app.add_middleware(
@@ -12,40 +17,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Generate data once at startup
-np.random.seed(42)
-dates = pd.date_range('2024-01-01', periods=100, freq='D')
-df = pd.DataFrame({
-    'date': dates,
-    'sales': np.random.randint(100, 1000, 100),
-    'category': np.random.choice(['Electronics', 'Clothing', 'Food'], 100)
-})
-
-# Pre-calculate summary and category stats
-SUMMARY = {
-    "total_sales": int(df['sales'].sum()),
-    "avg_sales": float(df['sales'].mean()),
-    "max_sales": int(df['sales'].max()),
-    "min_sales": int(df['sales'].min())
-}
-
-CATEGORY_STATS = df.groupby('category')['sales'].sum().to_dict()
-
-# Convert df to dict once
-DATA = df.to_dict(orient='records')
 
 @app.get("/")
 def read_root():
-    return {"message": "Sales Analysis API", "status": "running"}
+    return {"message": "Twitter Flow Analysis API", "status": "running"}
 
-@app.get("/data")
-def get_data():
-    return DATA
+@app.get("/figure_plt")
+def get_dashboard():
+    fig = plot_missing_values(dataset_path=dataset_path)
+    return fig
 
-@app.get("/summary")
-def get_summary():
-    return SUMMARY
-
-@app.get("/category-stats")
-def get_category_stats():
-    return CATEGORY_STATS
+@app.get("/healthcheck")
+def get_healthcheck():
+    return {"message": "Twitter Flow Analysis API", "status": "running"}
