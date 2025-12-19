@@ -1,6 +1,8 @@
 import sys
 from datetime import datetime
 
+# Control program behavior Represents a specific business or system failure Stops execution 
+# Used to enforce rules and fail fastCan be mapped to API responses or workflows error file name and file line number easy to read error message  
 
 class CustomException(Exception):
     """

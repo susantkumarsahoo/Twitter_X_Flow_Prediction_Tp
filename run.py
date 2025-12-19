@@ -3,8 +3,8 @@ import sys
 import time
 import signal
 import os
-
-# run.py
+import requests
+from pathlib import Path
 
 # Global process variables
 fastapi_process = None
@@ -12,20 +12,61 @@ streamlit_process = None
 
 def signal_handler(sig, frame):
     """Handle Ctrl+C to stop both servers"""
-    print("\n\nStopping servers...")
+    print("\n\n" + "="*60)
+    print("  Stopping servers...")
+    print("="*60)
+    
     if fastapi_process:
+        print("⏹️  Stopping FastAPI server...")
         fastapi_process.terminate()
+        try:
+            fastapi_process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            fastapi_process.kill()
+    
     if streamlit_process:
+        print("⏹️  Stopping Streamlit server...")
         streamlit_process.terminate()
-    print("Servers stopped!")
+        try:
+            streamlit_process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            streamlit_process.kill()
+    
+    print("\n✅ Servers stopped successfully!")
     sys.exit(0)
+
+def check_port_available(port):
+    """Check if a port is available"""
+    import socket
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        return s.connect_ex(('localhost', port)) != 0
+
+def wait_for_api(max_attempts=30):
+    """Wait for FastAPI to be ready"""
+    print("⏳ Waiting for FastAPI to be ready...")
+    
+    for i in range(max_attempts):
+        try:
+            response = requests.get("http://localhost:8000/healthcheck", timeout=2)
+            if response.status_code == 200:
+                print("✅ FastAPI is ready!")
+                return True
+        except requests.exceptions.RequestException:
+            pass
+        
+        sys.stdout.write(f"\r   Attempt {i+1}/{max_attempts}...")
+        sys.stdout.flush()
+        time.sleep(1)
+    
+    print("\n❌ FastAPI failed to start within expected time")
+    return False
 
 def run_servers():
     """Run both FastAPI and Streamlit servers"""
     global fastapi_process, streamlit_process
     
-    print("="*60)
-    print("  Sales Analysis Dashboard - Starting Servers")
+    print("\n" + "="*60)
+    print("  Twitter Analytics Dashboard - Starting Servers")
     print("="*60)
     
     # Check if files exist
@@ -42,50 +83,95 @@ def run_servers():
     print("\n✓ Found main.py (FastAPI backend)")
     print("✓ Found app.py (Streamlit frontend)")
     
+    # Check if ports are available
+    if not check_port_available(8000):
+        print("\n⚠️  Port 8000 is already in use!")
+        print("Please stop any running FastAPI instances or use a different port")
+        sys.exit(1)
+    
+    if not check_port_available(8501):
+        print("\n⚠️  Port 8501 is already in use!")
+        print("Please stop any running Streamlit instances or use a different port")
+        sys.exit(1)
+    
     # Register signal handler for Ctrl+C
     signal.signal(signal.SIGINT, signal_handler)
     
-    print("\n🚀 Starting FastAPI server...")
+    print("\n" + "-"*60)
+    print("🚀 Starting FastAPI server...")
+    print("-"*60)
+    
+    # Start FastAPI with output visible
     fastapi_process = subprocess.Popen(
-        [sys.executable, '-m', 'uvicorn', 'main:app', '--host', '0.0.0.0', '--port', '8000'],
+        [sys.executable, '-m', 'uvicorn', 'main:app', '--host', '0.0.0.0', '--port', '8000', '--log-level', 'info'],
         stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT
+        stderr=subprocess.STDOUT,
+        universal_newlines=True,
+        bufsize=1
     )
     
-    print("⏳ Waiting for FastAPI to initialize...")
+    # Wait for FastAPI to be ready
+    if not wait_for_api():
+        print("\n❌ Failed to start FastAPI. Stopping...")
+        signal_handler(None, None)
+        return
+    
+    print("\n" + "-"*60)
+    print("🚀 Starting Streamlit server...")
+    print("-"*60)
+    
+    # Start Streamlit
+    streamlit_process = subprocess.Popen(
+        [sys.executable, '-m', 'streamlit', 'run', 'app.py', '--server.headless', 'true'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        universal_newlines=True,
+        bufsize=1
+    )
+    
     time.sleep(3)
     
-    print("🚀 Starting Streamlit server...")
-    streamlit_process = subprocess.Popen(
-        [sys.executable, '-m', 'streamlit', 'run', 'app.py'],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT
-    )
-        
     print("\n" + "="*60)
     print("✅ Both servers are running!")
     print("="*60)
     print("\n📍 Access URLs:")
-    print("   FastAPI Backend:  http://localhost:8000")
-    print("   Streamlit Dashboard: http://localhost:8501")
+    print("   🔧 FastAPI Backend:      http://localhost:8000")
+    print("   📊 FastAPI Docs:         http://localhost:8000/docs")
+    print("   🌐 Streamlit Dashboard:  http://localhost:8501")
     print("\n💡 Press Ctrl+C to stop both servers")
     print("="*60 + "\n")
     
     try:
-        # Keep the script running
+        # Keep the script running and monitor processes
         while True:
             time.sleep(1)
             
             # Check if processes are still running
             if fastapi_process.poll() is not None:
                 print("\n⚠️  FastAPI process stopped unexpectedly!")
+                print("Exit code:", fastapi_process.returncode)
                 break
+            
             if streamlit_process.poll() is not None:
                 print("\n⚠️  Streamlit process stopped unexpectedly!")
+                print("Exit code:", streamlit_process.returncode)
                 break
                 
     except KeyboardInterrupt:
         signal_handler(None, None)
 
 if __name__ == "__main__":
+    # Check for required packages
+    try:
+        import fastapi
+        import uvicorn
+        import streamlit
+        import pandas
+        import plotly
+    except ImportError as e:
+        print(f"\n❌ Missing required package: {e}")
+        print("\nPlease install required packages:")
+        print("pip install fastapi uvicorn streamlit pandas plotly openpyxl requests")
+        sys.exit(1)
+    
     run_servers()

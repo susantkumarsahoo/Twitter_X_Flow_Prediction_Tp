@@ -2,6 +2,12 @@ import logging
 import os
 from datetime import datetime
 
+# DEBUG, INFO, WARNING, ERROR, CRITICAL
+# Use DEBUG to understand how the code is working.
+# Use INFO for normal, successful operations.
+# Use WARNING when something is unexpected, but the system can still continue.
+# Use ERROR when an operation fails, but the application does not crash completely.
+# Use CRITICAL when the entire system or service is at risk.
 # ================================================================
 # LOGGER UTILITY
 # ================================================================

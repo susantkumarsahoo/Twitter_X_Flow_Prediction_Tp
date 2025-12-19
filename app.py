@@ -1,42 +1,77 @@
 import streamlit as st
 import requests
 import pandas as pd
-import plotly.express as px
-import numpy as np
-import matplotlib.pyplot as plt
-from src.streamlit.st_analyst import analysis_dashboard
-from src.constants.paths import dataset_path
-from datetime import datetime, timedelta
+from datetime import datetime
+import time
 
-# app.py
+# Try to import custom modules
+try:
+    from src.backend_api.streamlit_helper import analysis_dashboard
+    from src.constants.paths import dataset_path
+except ImportError:
+    st.error("⚠️ Unable to import custom modules. Please check your project structure.")
+    dataset_path = "data/dataset.xlsx"  # Fallback path
 
+# API Configuration
 API_URL = "http://localhost:8000"
 
-# Set page configuration
+# Page Configuration
 st.set_page_config(
-    page_title="Analytics Dashboard",
+    page_title="Twitter Analytics Dashboard",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for better sidebar styling
+# Custom CSS
 st.markdown("""
     <style>
     .sidebar .sidebar-content {
         background-color: #f8f9fa;
     }
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        padding: 10px 20px;
+    }
+    .metric-container {
+        background-color: #f0f2f6;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 5px 0;
+    }
     </style>
 """, unsafe_allow_html=True)
 
 # ============================================
-# SIDEBAR CONFIGURATION
+# API STATUS CHECK FUNCTION
+# ============================================
+
+def check_api_status():
+    """Check if FastAPI is running and accessible"""
+    try:
+        response = requests.get(f"{API_URL}/healthcheck", timeout=3)
+        if response.status_code == 200:
+            data = response.json()
+            return True, data
+        else:
+            return False, {"status": "error", "message": "API returned non-200 status"}
+    except requests.exceptions.ConnectionError:
+        return False, {"status": "error", "message": "Cannot connect to API"}
+    except requests.exceptions.Timeout:
+        return False, {"status": "error", "message": "Connection timeout"}
+    except Exception as e:
+        return False, {"status": "error", "message": str(e)}
+
+# ============================================
+# SIDEBAR
 # ============================================
 
 with st.sidebar:
     st.markdown(
         """
-        <div style="border: 2px solid blue; padding: 10px; border-radius: 8px; text-align: center;">
+        <div style="border: 2px solid #1E90FF; padding: 10px; border-radius: 8px; text-align: center;">
             <h2 style="color: #1E90FF;">📊 Twitter X Control Panel</h2>
         </div>
         <hr>
@@ -44,9 +79,9 @@ with st.sidebar:
         unsafe_allow_html=True
     )    
     
-    # ========== MAIN NAVIGATION ==========
-    st.header("🧭 CRM Navigation")
-
+    # Navigation
+    st.header("🧭 Navigation")
+    
     dashboard_type = st.radio(
         "Select Dashboard",
         [
@@ -59,42 +94,108 @@ with st.sidebar:
         ],
         label_visibility="collapsed"
     )
-    # ========== DATA SOURCE CONFIGURATION ==========
+    
+    st.divider()
+    
+    # Data Source
     st.header("📁 Data Source")
-
-    # Only manual file upload
+    
     uploaded_file = st.file_uploader(
-        "Upload your data manually",
+        "Upload your data",
         type=['csv', 'xlsx', 'json'],
         help="Supported formats: CSV, Excel, JSON"
     )
-
-    # Optional: show confirmation if file uploaded
+    
     if uploaded_file is not None:
-        st.success(f"File '{uploaded_file.name}' uploaded successfully!")
-        
-with st.sidebar:
+        st.success(f"✅ '{uploaded_file.name}' uploaded!")
     
-    # ========== SETTINGS & INFO ==========
+    st.divider()
     
-    with st.expander("ℹ️ Info"):
-        st.info("""
-        **Dashboard Version:** 2.0
-        
-        **Last Updated:** {}
-        
-        **Data Points:** -
-        
-        **Status:** ✅ Connected
-        """.format(datetime.now().strftime("%Y-%m-%d %H:%M")))
+    # API Status Check
+    st.header("🔌 API Status")
     
-    st.caption("© 2024 Analytics Dashboard | v2.0")
+    api_status_placeholder = st.empty()
+    
+    with api_status_placeholder.container():
+        is_connected, api_data = check_api_status()
+        
+        if is_connected:
+            st.success("✅ API Connected")
+            
+            if api_data.get("dataset_available"):
+                st.info("📂 Dataset available")
+            else:
+                st.warning("⚠️ Dataset not found")
+        else:
+            st.error("❌ API Disconnected")
+            with st.expander("Show error details"):
+                st.code(api_data.get("message", "Unknown error"))
+                st.write("**Troubleshooting:**")
+                st.write("1. Check if FastAPI server is running")
+                st.write("2. Run: `uvicorn main:app --reload`")
+                st.write("3. Check if port 8000 is available")
+    
+    # Refresh API status button
+    if st.button("🔄 Refresh API Status", use_container_width=True):
+        st.rerun()
+    
+    st.divider()
+    
+    # Info Section
+    with st.expander("ℹ️ Dashboard Info"):
+        st.info(f"""
+        **Version:** 2.0
+        
+        **Last Updated:** {datetime.now().strftime("%Y-%m-%d %H:%M")}
+        
+        **Status:** {"✅ Connected" if is_connected else "❌ Disconnected"}
+        
+        **Dataset:** {dataset_path}
+        """)
+    
+    st.caption("© 2024 Twitter Analytics Dashboard | v2.0")
 
 # ============================================
-# MAIN CONTENT AREA
+# MAIN CONTENT
 # ============================================
-#Analysis Dashboard
-analysis_dashboard(dashboard_type, dataset_path)
+
+# Check API connection before proceeding
+is_connected, _ = check_api_status()
+
+if not is_connected:
+    st.title("⚠️ API Connection Required")
+    st.error("Cannot connect to FastAPI backend. Please ensure the server is running.")
+    
+    st.markdown("""
+    ### 🔧 Quick Fix:
+    
+    1. Open a terminal in your project directory
+    2. Run the following command:
+    ```bash
+    python run.py
+    ```
+    
+    Or start servers separately:
+    ```bash
+    # Terminal 1 - FastAPI
+    uvicorn main:app --reload
+    
+    # Terminal 2 - Streamlit
+    streamlit run app.py
+    ```
+    
+    3. Refresh this page after the server starts
+    """)
+    
+    if st.button("🔄 Retry Connection", type="primary"):
+        st.rerun()
+else:
+    # Show main dashboard if connected
+    try:
+        analysis_dashboard(dashboard_type, dataset_path, uploaded_file)
+    except NameError:
+        st.error("⚠️ Dashboard module not found. Please check your project structure.")
+        st.info("Make sure `src/streamlit/st_analyst.py` exists and contains `analysis_dashboard` function.")
 
 
 
