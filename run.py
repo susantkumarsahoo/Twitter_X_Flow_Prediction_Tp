@@ -6,9 +6,17 @@ import os
 import requests
 from pathlib import Path
 
+from src.logging.logger import get_logger
+from src.exceptions.exception import CustomException
+
+logger = get_logger(__name__)
+
+# run.py
+
 # Global process variables
 fastapi_process = None
 streamlit_process = None
+flask_process = None
 
 def signal_handler(sig, frame):
     """Handle Ctrl+C to stop both servers"""
@@ -23,6 +31,14 @@ def signal_handler(sig, frame):
             fastapi_process.wait(timeout=5)
         except subprocess.TimeoutExpired:
             fastapi_process.kill()
+    
+    if flask_process:
+        print("⏹️  Stopping Flask server...")
+        flask_process.terminate()
+        try:
+            flask_process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            flask_process.kill()
     
     if streamlit_process:
         print("⏹️  Stopping Streamlit server...")
@@ -63,7 +79,7 @@ def wait_for_api(max_attempts=30):
 
 def run_servers():
     """Run both FastAPI and Streamlit servers"""
-    global fastapi_process, streamlit_process
+    global fastapi_process, streamlit_process, flask_process
     
     print("\n" + "="*60)
     print("  Twitter Analytics Dashboard - Starting Servers")
@@ -80,13 +96,27 @@ def run_servers():
         print("Please ensure app.py (Streamlit frontend) exists in current directory")
         sys.exit(1)
     
+    if not os.path.exists('flask_app.py'):
+        print("\n⚠️  Warning: flask_app.py not found!")
+        print("Flask server will not be started")
+        flask_exists = False
+    else:
+        flask_exists = True
+    
     print("\n✓ Found main.py (FastAPI backend)")
     print("✓ Found app.py (Streamlit frontend)")
+    if flask_exists:
+        print("✓ Found flask_app.py (Flask backend)")
     
     # Check if ports are available
     if not check_port_available(8000):
         print("\n⚠️  Port 8000 is already in use!")
         print("Please stop any running FastAPI instances or use a different port")
+        sys.exit(1)
+    
+    if flask_exists and not check_port_available(5000):
+        print("\n⚠️  Port 5000 is already in use!")
+        print("Please stop any running Flask instances or use a different port")
         sys.exit(1)
     
     if not check_port_available(8501):
@@ -116,19 +146,25 @@ def run_servers():
         signal_handler(None, None)
         return
     
+    # Start Flask if file exists
+    if flask_exists:
+        print("\n" + "-"*60)
+        print("🚀 Starting Flask server...")
+        print("-"*60)
+        
+        flask_process = subprocess.Popen(
+            [sys.executable, 'flask_app.py'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+            bufsize=1,
+            env={**os.environ, 'FLASK_APP': 'flask_app.py', 'FLASK_RUN_HOST': '0.0.0.0', 'FLASK_RUN_PORT': '5000'}
+        )
+        time.sleep(2)
+    
     print("\n" + "-"*60)
     print("🚀 Starting Streamlit server...")
     print("-"*60)
-
-# Start Flask with output visible
-    flask_process = subprocess.Popen(
-        [sys.executable, 'flask_app.py'],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-        bufsize=1,
-        env={**os.environ, 'FLASK_APP': 'flask_app.py', 'FLASK_RUN_HOST': '0.0.0.0', 'FLASK_RUN_PORT': '5000'}
-    )
 
     # Start Streamlit
     streamlit_process = subprocess.Popen(
@@ -142,13 +178,15 @@ def run_servers():
     time.sleep(3)
     
     print("\n" + "="*60)
-    print("✅ Both servers are running!")
+    print("✅ Servers are running!")
     print("="*60)
     print("\n📍 Access URLs:")
     print("   🔧 FastAPI Backend:      http://localhost:8000")
     print("   📊 FastAPI Docs:         http://localhost:8000/docs")
+    if flask_exists:
+        print("   🌶️  Flask Backend:        http://localhost:5000")
     print("   🌐 Streamlit Dashboard:  http://localhost:8501")
-    print("\n💡 Press Ctrl+C to stop both servers")
+    print("\n💡 Press Ctrl+C to stop all servers")
     print("="*60 + "\n")
     
     try:
@@ -160,6 +198,11 @@ def run_servers():
             if fastapi_process.poll() is not None:
                 print("\n⚠️  FastAPI process stopped unexpectedly!")
                 print("Exit code:", fastapi_process.returncode)
+                break
+            
+            if flask_exists and flask_process and flask_process.poll() is not None:
+                print("\n⚠️  Flask process stopped unexpectedly!")
+                print("Exit code:", flask_process.returncode)
                 break
             
             if streamlit_process.poll() is not None:
@@ -178,10 +221,14 @@ if __name__ == "__main__":
         import streamlit
         import pandas
         import plotly
+        import flask
     except ImportError as e:
         print(f"\n❌ Missing required package: {e}")
         print("\nPlease install required packages:")
-        print("pip install fastapi uvicorn streamlit pandas plotly openpyxl requests")
+        print("pip install fastapi uvicorn streamlit pandas plotly openpyxl requests flask")
         sys.exit(1)
     
     run_servers()
+
+
+    

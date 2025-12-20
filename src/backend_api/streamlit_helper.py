@@ -5,6 +5,11 @@ import requests
 from typing import Optional
 import time
 
+from src.logging.logger import get_logger
+from src.exceptions.exception import CustomException
+
+logger = get_logger(__name__)
+
 FASTAPI_URL = "http://localhost:8000"
 FLASK_URL = "http://localhost:5000"
 
@@ -98,24 +103,24 @@ def analysis_dashboard(dashboard_type: str, dataset_path: str, uploaded_file: Op
         # ============================================
         # TAB 1: VISUALIZATION
         # ============================================
-        # ============================================
+                # ============================================
         with tab1:
             st.subheader("Complaint Information")
-            
+
             try:
-                with st.spinner("📊 Loading dataset info..."):     
+                with st.spinner("📊 Loading dataset info..."):
                     response = flask_api_request_url("/complaint_report", timeout=30)
-                    
+
                     if response.status_code == 200:
                         data = response.json()
                         st.json(data)   # <-- renders dict nicely
                     else:
                         st.error(f"❌ Error loading dataset info: {response.text}")
-                        
+
             except Exception as e:
                 st.error(f"❌ Error loading dataset info: {e}")
                 with st.expander("Show error details"):
-                    st.code(str(e))  
+                    st.code(str(e))
         # ============================================
         # TAB 2: DATA TABLE
         # ============================================

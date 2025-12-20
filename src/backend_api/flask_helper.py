@@ -1,5 +1,12 @@
 import os
 import pandas as pd
+import numpy as np
+import sys
+
+from src.logging.logger import get_logger
+from src.exceptions.exception import CustomException
+
+logger = get_logger(__name__)
 
 def get_complaint_report(dataset_path: str) -> dict:
     """
@@ -37,4 +44,5 @@ def get_complaint_report(dataset_path: str) -> dict:
         return {"report": report}
 
     except Exception as e:
-        return {"error": f"Error generating report: {str(e)}"}
+        logger.error(f"Error generating missing values report: {str(e)}", exc_info=True)
+        raise CustomException(e, sys) from e

@@ -6,6 +6,10 @@ import os
 import logging
 from pathlib import Path
 
+from src.logging.logger import get_logger
+from src.exceptions.exception import CustomException
+
+# main.py
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
