@@ -109,7 +109,7 @@ def run_servers():
         universal_newlines=True,
         bufsize=1
     )
-    
+
     # Wait for FastAPI to be ready
     if not wait_for_api():
         print("\n❌ Failed to start FastAPI. Stopping...")
@@ -119,7 +119,17 @@ def run_servers():
     print("\n" + "-"*60)
     print("🚀 Starting Streamlit server...")
     print("-"*60)
-    
+
+# Start Flask with output visible
+    flask_process = subprocess.Popen(
+        [sys.executable, 'flask_app.py'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        universal_newlines=True,
+        bufsize=1,
+        env={**os.environ, 'FLASK_APP': 'flask_app.py', 'FLASK_RUN_HOST': '0.0.0.0', 'FLASK_RUN_PORT': '5000'}
+    )
+
     # Start Streamlit
     streamlit_process = subprocess.Popen(
         [sys.executable, '-m', 'streamlit', 'run', 'app.py', '--server.headless', 'true'],

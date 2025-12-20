@@ -5,10 +5,10 @@ import requests
 from typing import Optional
 import time
 
-API_URL = "http://localhost:8000"
+FASTAPI_URL = "http://localhost:8000"
+FLASK_URL = "http://localhost:5000"
 
-
-def make_api_request(endpoint: str, timeout: int = 30, max_retries: int = 3):
+def fastapi_api_request_url(endpoint: str, timeout: int = 30, max_retries: int = 3):
     """
     Make API request with retry logic
     
@@ -22,7 +22,40 @@ def make_api_request(endpoint: str, timeout: int = 30, max_retries: int = 3):
     """
     for attempt in range(max_retries):
         try:
-            response = requests.get(f"{API_URL}{endpoint}", timeout=timeout)
+            response = requests.get(f"{FASTAPI_URL}{endpoint}", timeout=timeout)
+            response.raise_for_status()
+            return response
+        except requests.exceptions.Timeout:
+            if attempt < max_retries - 1:
+                st.warning(f"⏱️ Request timeout. Retrying... (Attempt {attempt + 2}/{max_retries})")
+                time.sleep(2)
+            else:
+                st.error(f"⏱️ Request timed out after {max_retries} attempts.")
+                return None
+        except requests.exceptions.ConnectionError:
+            st.error("❌ Cannot connect to API. Please ensure the FastAPI server is running.")
+            return None
+        except requests.exceptions.RequestException as e:
+            st.error(f"❌ Request error: {e}")
+            return None
+    
+    return None
+
+def flask_api_request_url(endpoint: str, timeout: int = 30, max_retries: int = 3):
+    """
+    Make API request with retry logic
+    
+    Parameters:
+        endpoint: API endpoint to call
+        timeout: Request timeout in seconds
+        max_retries: Maximum number of retry attempts
+    
+    Returns:
+        Response object or None if failed
+    """
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(f"{FLASK_URL}{endpoint}", timeout=timeout)
             response.raise_for_status()
             return response
         except requests.exceptions.Timeout:
@@ -42,6 +75,7 @@ def make_api_request(endpoint: str, timeout: int = 30, max_retries: int = 3):
     return None
 
 
+
 def analysis_dashboard(dashboard_type: str, dataset_path: str, uploaded_file: Optional[object] = None) -> None:
     """
     Render the selected dashboard.
@@ -59,17 +93,29 @@ def analysis_dashboard(dashboard_type: str, dataset_path: str, uploaded_file: Op
     # ============================================
     if dashboard_type == "📈 Analysis Dashboard":
         
-        tab1, tab2, tab3, tab4 = st.tabs(["📈 Visualization", "📋 Data Table", "📊 Summary", "🔍 Dataset Info"])
+        tab1, tab2, tab3, tab4 = st.tabs(["📈 Complaint Info", "📋 Data Table", "📊 Summary", "🔍 Dataset Info"])
         
         # ============================================
         # TAB 1: VISUALIZATION
         # ============================================
+        # ============================================
         with tab1:
-            st.subheader("Missing Values Analysis")
-
-        #  i will make letters for this
-            st.write("i will make letters for this")    
-
+            st.subheader("Complaint Information")
+            
+            try:
+                with st.spinner("📊 Loading dataset info..."):     
+                    response = flask_api_request_url("/complaint_report", timeout=30)
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        st.json(data)   # <-- renders dict nicely
+                    else:
+                        st.error(f"❌ Error loading dataset info: {response.text}")
+                        
+            except Exception as e:
+                st.error(f"❌ Error loading dataset info: {e}")
+                with st.expander("Show error details"):
+                    st.code(str(e))  
         # ============================================
         # TAB 2: DATA TABLE
         # ============================================
@@ -77,7 +123,7 @@ def analysis_dashboard(dashboard_type: str, dataset_path: str, uploaded_file: Op
             st.subheader("Missing Values Report")
             
             with st.spinner("🔄 Loading data..."):
-                response = make_api_request("/report_missing_values", timeout=30)
+                response = fastapi_api_request_url("/report_missing_values", timeout=30)
                 
                 if response is not None:
                     try:
@@ -284,7 +330,7 @@ def analysis_dashboard(dashboard_type: str, dataset_path: str, uploaded_file: Op
             
             try:
                 with st.spinner("📊 Loading dataset info..."):     
-                    response = make_api_request("/read_dataset_info", timeout=30)
+                    response = fastapi_api_request_url("/read_dataset_info", timeout=30)
                     
                     if response.status_code == 200:
                         data = response.json()
