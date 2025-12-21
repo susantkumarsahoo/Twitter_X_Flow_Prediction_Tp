@@ -9,30 +9,13 @@ from src.logging.logger import get_logger
 from src.exceptions.exception import CustomException
 import matplotlib.pyplot as plt
 
+from src.constants.paths import dataset_path
 
-# -----------------------------------------------------------------------------
-# Logger (single source of truth)
-# -----------------------------------------------------------------------------
+from src.backend_api.fastapi_helper import report_missing_values, get_dataset_info
+    
+
 logger = get_logger(__name__)
 
-# -----------------------------------------------------------------------------
-# Imports with logging
-# -----------------------------------------------------------------------------
-try:
-    from src.constants.paths import dataset_path
-    from src.backend_api.fastapi_helper import (
-        report_missing_values,
-        get_dataset_info, 
-    )
-
-    from src.visualization.figure_plot import (
-        process_complaints_data,
-        
-    )    
-    logger.info("Custom FastAPI modules loaded successfully")
-except ImportError as e:
-    logger.warning("Import issue detected, using fallback dataset path", exc_info=True)
-    dataset_path = "data/dataset.xlsx"
 
 # -----------------------------------------------------------------------------
 # FastAPI app
@@ -137,25 +120,11 @@ def get_report_missing_values():
 
 
 @app.get("/read_dataset_info")
-def geting_dataset_info():
+def get_dataset_info_endpoint():
     try:
         return get_dataset_info(dataset_path=dataset_path)
     except Exception as e:
         logger.exception("Failed to fetch dataset info")
-        raise CustomException(e)
-    
-# FastAPI endpoint
-@app.get("/visualize")
-def get_visualization():
-    try:
-        fig = process_complaints_data(dataset_path)
-        
-        # Convert Plotly figure to JSON
-        fig_json = fig.to_json()
-        
-        return JSONResponse(content={"plotly_json": fig_json})
-    except Exception as e:
-        logger.exception("Failed to fetch visualization data")
         raise CustomException(e)
 
 # -----------------------------------------------------------------------------

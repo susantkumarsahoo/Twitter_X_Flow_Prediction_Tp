@@ -4,11 +4,10 @@ import pandas as pd
 import requests
 from typing import Optional
 import time
-
 from src.logging.logger import get_logger
 from src.exceptions.exception import CustomException
 from src.constants.paths import dataset_path
-from src.visualization.st_plt import create_complaints_visualization, process_complaints_data
+from src.visualization.st_plt import create_complaints_visualization, process_complaints_data,create_missing_values_chart
 from plotly.subplots import make_subplots
 
 
@@ -107,7 +106,7 @@ def analysis_dashboard(dashboard_type: str, dataset_path: str, uploaded_file: Op
         tab1, tab2, tab3, tab4, tab5 = st.tabs(["📈 Complaint Info", "📋 Data Table", "📊 Summary", "🔍 Dataset Info",'Visualizations'])
         
         # ============================================
-        # TAB 1: VISUALIZATION
+        # TAB 1: COMPLAINT INFORMATION
         # ============================================
         with tab1:
             st.subheader("Complaint Information")
@@ -363,7 +362,6 @@ def analysis_dashboard(dashboard_type: str, dataset_path: str, uploaded_file: Op
         # ============================================
         # DATASET INFO        
         # ============================================ 
-
         with tab4:
             st.subheader("Dataset Information")
             
@@ -402,24 +400,28 @@ def analysis_dashboard(dashboard_type: str, dataset_path: str, uploaded_file: Op
 
             try:
                 with st.spinner("📊 Loading Visualization..."):
-                       
+                    # Static visualization
+                    fig_01 = process_complaints_data(dataset_path)
+                    st.plotly_chart(fig_01, use_container_width=True)
+                    logger.info("Static visualization loaded")
 
-                    if response.status_code == 200:
-                        logger.info("Static visualization loaded")
-                        fig_01 = process_complaints_data(dataset_path)
-                        st.plotly_chart(fig_01, use_container_width=True)
+                    st.divider()
 
-                        st.divider()
+                    # Interactive Plotly visualization
+                    fig_02 = create_complaints_visualization(dataset_path)
+                    st.plotly_chart(fig_02, use_container_width=True)
+                    logger.info("Interactive visualization loaded")
 
-                        # Interactive Plotly visualization
-                        fig = create_complaints_visualization(dataset_path)
-                        st.plotly_chart(fig, use_container_width=True)
-                        logger.info("Interactive visualization loaded")
+                    st.divider()
+                    
+                    # Missing values visualization
+                    fig_03 = create_missing_values_chart(dataset_path)
+                    if fig_03 is not None:
+                        st.plotly_chart(fig_03, use_container_width=True)
+                        logger.info("Missing values visualization loaded")
                     else:
-                        st.error(f"❌ Error visualizing: {response.text}")
-                        logger.warning(
-                            f"Visualization API failed | Status: {response.status_code}"
-                        )
+                        st.info("ℹ️ No missing values found in the dataset.")
+                        logger.info("No missing values to visualize")
 
             except CustomException as ce:
                 logger.error("CustomException in Visualization", exc_info=True)
