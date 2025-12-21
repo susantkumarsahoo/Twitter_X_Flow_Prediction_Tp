@@ -282,3 +282,93 @@ def create_missing_values_chart(
     )
 
     return fig
+
+
+
+
+import pandas as pd
+import plotly.express as px
+
+def complaints_status_stacked_bar(dataset_path: str):
+    """
+    Reads complaint data from Excel and returns a Plotly stacked bar chart.
+    Shows Closed vs Open complaints per month, faceted by year.
+    """
+    # Load and preprocess
+    df = pd.read_excel(dataset_path)
+    df['DATE'] = pd.to_datetime(df['DATE'])
+    df['YEAR'] = df['DATE'].dt.year
+    df['MONTH_NAME'] = df['DATE'].dt.strftime('%B')
+
+    # Group by YEAR, MONTH_NAME, CLOSED/OPEN
+    summary = (
+        df.groupby(['YEAR', 'MONTH_NAME', 'CLOSED/OPEN'])
+          .size()
+          .reset_index(name='COUNT')
+    )
+
+    # Build stacked bar chart
+    fig = px.bar(
+        summary,
+        x="MONTH_NAME",
+        y="COUNT",
+        color="CLOSED/OPEN",
+        barmode="stack",
+        facet_col="YEAR",
+        title="Complaints Status by Month and Year",
+        labels={"COUNT": "Number of Complaints"}
+    )
+
+    fig.update_layout(
+        legend_title_text="Complaint Status",
+        xaxis_title="Month",
+        yaxis_title="Complaint Count",
+        template="plotly_white"
+    )
+
+    return fig
+
+
+
+import pandas as pd
+import plotly.express as px
+
+def complaints_trend_line(dataset_path: str):
+    """
+    Reads complaint data from Excel and returns a Plotly line chart.
+    Shows monthly complaint counts with year-wise color differentiation.
+    """
+    # Load and preprocess
+    df = pd.read_excel(dataset_path)
+    df['DATE'] = pd.to_datetime(df['DATE'])
+    df['YEAR'] = df['DATE'].dt.year
+    df['MONTH'] = df['DATE'].dt.month
+
+    # Group by YEAR, MONTH
+    summary = (
+        df.groupby(['YEAR', 'MONTH'])
+          .size()
+          .reset_index(name='COUNT')
+    )
+
+    # Build line chart
+    fig = px.line(
+        summary,
+        x="MONTH",
+        y="COUNT",
+        color="YEAR",
+        markers=True,
+        title="Complaints Count by Month (Year-wise Colors)",
+        labels={"COUNT": "Number of Complaints", "MONTH": "Month"}
+    )
+
+    fig.update_layout(
+        xaxis=dict(
+            tickmode="array",
+            tickvals=list(range(1, 13)),
+            ticktext=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+        ),
+        template="plotly_white"
+    )
+
+    return fig

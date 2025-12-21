@@ -7,7 +7,9 @@ import time
 from src.logging.logger import get_logger
 from src.exceptions.exception import CustomException
 from src.constants.paths import dataset_path
-from src.visualization.st_plt import create_complaints_visualization, process_complaints_data,create_missing_values_chart
+from src.visualization.st_plt import (create_complaints_visualization, process_complaints_data,create_missing_values_chart,
+                                    complaints_status_stacked_bar,complaints_trend_line)
+
 from plotly.subplots import make_subplots
 
 
@@ -422,6 +424,21 @@ def analysis_dashboard(dashboard_type: str, dataset_path: str, uploaded_file: Op
                     else:
                         st.info("ℹ️ No missing values found in the dataset.")
                         logger.info("No missing values to visualize")
+
+                    st.divider()
+
+                    # Time series visualization
+                    fig_04 = complaints_trend_line(dataset_path)
+                    fig_05 =complaints_status_stacked_bar(dataset_path)
+                    if fig_04 is not None and fig_05 is not None:
+                        st.plotly_chart(fig_04, use_container_width=True)
+                        st.plotly_chart(fig_05, use_container_width=True)
+                        logger.info("Time series visualization loaded")
+                    else:
+                        st.info("ℹ️ No time series data found in the dataset.")
+                        logger.info("No time series data to visualize")
+
+                    logger.info("Visualization loaded")
 
             except CustomException as ce:
                 logger.error("CustomException in Visualization", exc_info=True)
