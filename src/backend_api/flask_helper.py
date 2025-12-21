@@ -46,3 +46,6 @@ def get_complaint_report(dataset_path: str) -> dict:
     except Exception as e:
         logger.error(f"Error generating missing values report: {str(e)}", exc_info=True)
         raise CustomException(e, sys) from e
+
+
+

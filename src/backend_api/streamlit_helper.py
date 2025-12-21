@@ -29,6 +29,7 @@ def fastapi_api_request_url(endpoint: str, timeout: int = 30, max_retries: int =
         try:
             response = requests.get(f"{FASTAPI_URL}{endpoint}", timeout=timeout)
             response.raise_for_status()
+            logger.info("Fast API request successful")
             return response
         except requests.exceptions.Timeout:
             if attempt < max_retries - 1:
@@ -62,6 +63,7 @@ def flask_api_request_url(endpoint: str, timeout: int = 30, max_retries: int = 3
         try:
             response = requests.get(f"{FLASK_URL}{endpoint}", timeout=timeout)
             response.raise_for_status()
+            logger.info("Flask API request successful")
             return response
         except requests.exceptions.Timeout:
             if attempt < max_retries - 1:
@@ -98,12 +100,11 @@ def analysis_dashboard(dashboard_type: str, dataset_path: str, uploaded_file: Op
     # ============================================
     if dashboard_type == "📈 Analysis Dashboard":
         
-        tab1, tab2, tab3, tab4 = st.tabs(["📈 Complaint Info", "📋 Data Table", "📊 Summary", "🔍 Dataset Info"])
+        tab1, tab2, tab3, tab4, tab5 = st.tabs(["📈 Complaint Info", "📋 Data Table", "📊 Summary", "🔍 Dataset Info",'Visualizations'])
         
         # ============================================
         # TAB 1: VISUALIZATION
         # ============================================
-                # ============================================
         with tab1:
             st.subheader("Complaint Information")
 
@@ -113,14 +114,24 @@ def analysis_dashboard(dashboard_type: str, dataset_path: str, uploaded_file: Op
 
                     if response.status_code == 200:
                         data = response.json()
-                        st.json(data)   # <-- renders dict nicely
+                        st.json(data)
                     else:
                         st.error(f"❌ Error loading dataset info: {response.text}")
+                        logger.error(f"Error loading dataset info: {response.text}")
+                logger.info("Streamlit blocked due to API unavailability")
+            except CustomException as ce:
+                logger.error(f"CustomException in Complaint Info: {ce}")
+                st.error("❌ A custom error occurred while loading dataset info.")
+                with st.expander("Show error details"):
+                    st.code(str(ce))
 
             except Exception as e:
-                st.error(f"❌ Error loading dataset info: {e}")
+                logger.exception("Unexpected error in Complaint Info")
+                st.error("❌ An unexpected error occurred.")
                 with st.expander("Show error details"):
                     st.code(str(e))
+                logger.error(f"Unexpected error in Complaint Info: {e}")
+                logger.info("Streamlit blocked due to API unavailability")
         # ============================================
         # TAB 2: DATA TABLE
         # ============================================
@@ -189,11 +200,11 @@ def analysis_dashboard(dashboard_type: str, dataset_path: str, uploaded_file: Op
                             # Add color-coded severity
                             def color_severity(val):
                                 if val >= 50:
-                                    return 'background-color: #ffcccc'  # Red
+                                    return 'background-color: #ffcccc'
                                 elif val >= 25:
-                                    return 'background-color: #ffffcc'  # Yellow
+                                    return 'background-color: #ffffcc'
                                 else:
-                                    return 'background-color: #ccffcc'  # Green
+                                    return 'background-color: #ccffcc'
                             
                             # Display with styling
                             st.dataframe(
@@ -223,11 +234,18 @@ def analysis_dashboard(dashboard_type: str, dataset_path: str, uploaded_file: Op
                         else:
                             st.success("✅ No missing values found in the dataset!")
                             st.balloons()
+                        logger.info("missing values found in the dataset")
+                    except CustomException as ce:
+                        logger.error(f"CustomException in Complaint Info: {ce}")
+                        st.error("❌ A custom error occurred while loading dataset info.")
+                        with st.expander("Show error details"):
+                            st.code(str(ce))                            
                     
                     except Exception as e:
                         st.error(f"❌ Error processing data: {e}")
                         with st.expander("Show error details"):
                             st.code(str(e))
+                            logger.info("Complaint Info loaded")
         
         # ============================================
         # TAB 3: SUMMARY STATISTICS
@@ -318,15 +336,26 @@ def analysis_dashboard(dashboard_type: str, dataset_path: str, uploaded_file: Op
                         )
                     else:
                         st.info("ℹ️ No numeric columns found in the dataset.")
+                    
+
+                logger.info("Dataset summary statistics loaded")
             
             except FileNotFoundError:
                 st.error(f"❌ Dataset file not found: {dataset_path}")
                 st.info("Please check the dataset path in your configuration.")
+
+            except CustomException as ce:
+                logger.error(f"CustomException in Complaint Info: {ce}")
+                st.error("❌ A custom error occurred while loading dataset info.")
+                with st.expander("Show error details"):
+                    st.code(str(ce))
+
             
             except Exception as e:
                 st.error(f"❌ Error loading dataset: {e}")
                 with st.expander("Show error details"):
                     st.code(str(e))
+                logger.info("Dataset loaded")
         # ============================================
         # DATASET INFO
         # ============================================ 
@@ -339,12 +368,104 @@ def analysis_dashboard(dashboard_type: str, dataset_path: str, uploaded_file: Op
                     
                     if response.status_code == 200:
                         data = response.json()
-                        st.json(data)   # <-- renders dict nicely
+                        st.json(data)
                     else:
                         st.error(f"❌ Error loading dataset info: {response.text}")
+                    
+                logger.info("Dataset info loaded")
+
+            except CustomException as ce:
+                logger.error(f"CustomException in Complaint Info: {ce}")
+                st.error("❌ A custom error occurred while loading dataset info.")
+                with st.expander("Show error details"):
+                    st.code(str(ce))                        
                         
             except Exception as e:
                 st.error(f"❌ Error loading dataset info: {e}")
+                with st.expander("Show error details"):
+                    st.code(str(e))
+                logger.info("Dataset info loaded")
+
+    # ============================================
+    # VISUALIZATION
+    # ============================================
+        with tab5:
+            st.subheader("Visualization Information Charts")
+
+            try:
+                with st.spinner("📊 Loading visualization data..."):
+                    # Call your FastAPI endpoint
+                    response = fastapi_api_request_url("/pie_chart", timeout=30)
+
+                logger.info("Visualization data loaded successfully")
+                
+                if response and isinstance(response, dict):
+                    import plotly.graph_objects as go
+                    from plotly.subplots import make_subplots
+                    
+                    # Create subplots with 1 row and 3 columns
+                    fig = make_subplots(
+                        rows=1, cols=3,
+                        specs=[[{'type':'pie'}, {'type':'pie'}, {'type':'pie'}]],
+                        subplot_titles=("Complaints per Department", 
+                                    "Complaints per Year", 
+                                    "Closed vs Open Complaints")
+                    )
+                    
+                    # 1. Department Chart
+                    if 'department_chart' in response:
+                        fig.add_trace(go.Pie(
+                            labels=response['department_chart']['labels'],
+                            values=response['department_chart']['values'],
+                            name="Department",
+                            textinfo='label+percent',
+                            marker=dict(line=dict(color='white', width=2))
+                        ), row=1, col=1)
+                    
+                    # 2. Yearly Chart
+                    if 'yearly_chart' in response:
+                        fig.add_trace(go.Pie(
+                            labels=response['yearly_chart']['labels'],
+                            values=response['yearly_chart']['values'],
+                            name="Year",
+                            textinfo='label+percent',
+                            marker=dict(line=dict(color='white', width=2))
+                        ), row=1, col=2)
+                    
+                    # 3. Status Chart (Closed vs Open)
+                    if 'status_chart' in response:
+                        fig.add_trace(go.Pie(
+                            labels=response['status_chart']['labels'],
+                            values=response['status_chart']['values'],
+                            name="Status",
+                            textinfo='label+percent',
+                            marker=dict(
+                                colors=['orange', 'blue'],
+                                line=dict(color='white', width=2)
+                            )
+                        ), row=1, col=3)
+                    
+                    # Update layout
+                    fig.update_layout(
+                        height=500,
+                        showlegend=True,
+                        title_text="Complaint Analysis Dashboard"
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True)
+                    st.success("✅ Visualization loaded successfully")
+                else:
+                    st.warning("⚠️ Empty or invalid response from server")
+
+            except CustomException as ce:
+                logger.error(f"CustomException in Visualization: {ce}")
+                st.error("❌ A custom error occurred while loading visualization.")
+                with st.expander("Show error details"):
+                    st.code(str(ce))
+
+            except Exception as e:
+                logger.error(f"Exception in Visualization: {e}")
+                st.error("❌ Error loading visualization. Please check if the API server is running.")
                 with st.expander("Show error details"):
                     st.code(str(e))
 
