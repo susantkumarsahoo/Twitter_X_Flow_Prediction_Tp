@@ -7,6 +7,10 @@ import time
 
 from src.logging.logger import get_logger
 from src.exceptions.exception import CustomException
+from src.constants.paths import dataset_path
+from src.visualization.st_plt import create_complaints_visualization, process_complaints_data
+from plotly.subplots import make_subplots
+
 
 logger = get_logger(__name__)
 
@@ -357,8 +361,9 @@ def analysis_dashboard(dashboard_type: str, dataset_path: str, uploaded_file: Op
                     st.code(str(e))
                 logger.info("Dataset loaded")
         # ============================================
-        # DATASET INFO
+        # DATASET INFO        
         # ============================================ 
+
         with tab4:
             st.subheader("Dataset Information")
             
@@ -389,83 +394,42 @@ def analysis_dashboard(dashboard_type: str, dataset_path: str, uploaded_file: Op
     # ============================================
     # VISUALIZATION
     # ============================================
+# ============================================
+    # VISUALIZATION
+    # ============================================
         with tab5:
-            st.subheader("Visualization Information Charts")
+            st.subheader("Visualization")
 
             try:
-                with st.spinner("📊 Loading visualization data..."):
-                    # Call your FastAPI endpoint
-                    response = fastapi_api_request_url("/pie_chart", timeout=30)
+                with st.spinner("📊 Loading Visualization..."):
+                       
 
-                logger.info("Visualization data loaded successfully")
-                
-                if response and isinstance(response, dict):
-                    import plotly.graph_objects as go
-                    from plotly.subplots import make_subplots
-                    
-                    # Create subplots with 1 row and 3 columns
-                    fig = make_subplots(
-                        rows=1, cols=3,
-                        specs=[[{'type':'pie'}, {'type':'pie'}, {'type':'pie'}]],
-                        subplot_titles=("Complaints per Department", 
-                                    "Complaints per Year", 
-                                    "Closed vs Open Complaints")
-                    )
-                    
-                    # 1. Department Chart
-                    if 'department_chart' in response:
-                        fig.add_trace(go.Pie(
-                            labels=response['department_chart']['labels'],
-                            values=response['department_chart']['values'],
-                            name="Department",
-                            textinfo='label+percent',
-                            marker=dict(line=dict(color='white', width=2))
-                        ), row=1, col=1)
-                    
-                    # 2. Yearly Chart
-                    if 'yearly_chart' in response:
-                        fig.add_trace(go.Pie(
-                            labels=response['yearly_chart']['labels'],
-                            values=response['yearly_chart']['values'],
-                            name="Year",
-                            textinfo='label+percent',
-                            marker=dict(line=dict(color='white', width=2))
-                        ), row=1, col=2)
-                    
-                    # 3. Status Chart (Closed vs Open)
-                    if 'status_chart' in response:
-                        fig.add_trace(go.Pie(
-                            labels=response['status_chart']['labels'],
-                            values=response['status_chart']['values'],
-                            name="Status",
-                            textinfo='label+percent',
-                            marker=dict(
-                                colors=['orange', 'blue'],
-                                line=dict(color='white', width=2)
-                            )
-                        ), row=1, col=3)
-                    
-                    # Update layout
-                    fig.update_layout(
-                        height=500,
-                        showlegend=True,
-                        title_text="Complaint Analysis Dashboard"
-                    )
-                    
-                    st.plotly_chart(fig, use_container_width=True)
-                    st.success("✅ Visualization loaded successfully")
-                else:
-                    st.warning("⚠️ Empty or invalid response from server")
+                    if response.status_code == 200:
+                        logger.info("Static visualization loaded")
+                        fig_01 = process_complaints_data(dataset_path)
+                        st.plotly_chart(fig_01, use_container_width=True)
+
+                        st.divider()
+
+                        # Interactive Plotly visualization
+                        fig = create_complaints_visualization(dataset_path)
+                        st.plotly_chart(fig, use_container_width=True)
+                        logger.info("Interactive visualization loaded")
+                    else:
+                        st.error(f"❌ Error visualizing: {response.text}")
+                        logger.warning(
+                            f"Visualization API failed | Status: {response.status_code}"
+                        )
 
             except CustomException as ce:
-                logger.error(f"CustomException in Visualization: {ce}")
+                logger.error("CustomException in Visualization", exc_info=True)
                 st.error("❌ A custom error occurred while loading visualization.")
                 with st.expander("Show error details"):
                     st.code(str(ce))
 
             except Exception as e:
-                logger.error(f"Exception in Visualization: {e}")
-                st.error("❌ Error loading visualization. Please check if the API server is running.")
+                logger.exception("Unhandled error in visualization")
+                st.error("❌ Error loading visualization.")
                 with st.expander("Show error details"):
                     st.code(str(e))
 

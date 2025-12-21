@@ -1,11 +1,14 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.responses import StreamingResponse
 import pandas as pd
 import os
-
+import io
 from src.logging.logger import get_logger
 from src.exceptions.exception import CustomException
+import matplotlib.pyplot as plt
+
 
 # -----------------------------------------------------------------------------
 # Logger (single source of truth)
@@ -19,11 +22,11 @@ try:
     from src.constants.paths import dataset_path
     from src.backend_api.fastapi_helper import (
         report_missing_values,
-        get_dataset_info,
+        get_dataset_info, 
     )
 
     from src.visualization.figure_plot import (
-        complaint_analysis_pie,
+        process_complaints_data,
         
     )    
     logger.info("Custom FastAPI modules loaded successfully")
@@ -141,14 +144,19 @@ def geting_dataset_info():
         logger.exception("Failed to fetch dataset info")
         raise CustomException(e)
     
-@app.get("/pie_chart")
-def get_pie_chart():
+# FastAPI endpoint
+@app.get("/visualize")
+def get_visualization():
     try:
-        return complaint_analysis_pie(dataset_path=dataset_path)
+        fig = process_complaints_data(dataset_path)
+        
+        # Convert Plotly figure to JSON
+        fig_json = fig.to_json()
+        
+        return JSONResponse(content={"plotly_json": fig_json})
     except Exception as e:
-        logger.exception("Failed to fetch pie chart data")
+        logger.exception("Failed to fetch visualization data")
         raise CustomException(e)
-
 
 # -----------------------------------------------------------------------------
 # Local run

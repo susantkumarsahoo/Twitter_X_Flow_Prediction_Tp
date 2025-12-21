@@ -1,3 +1,4 @@
+import sys
 import pandas as pd
 from typing import Dict, Any, List
 import logging
@@ -93,9 +94,9 @@ def report_missing_values(dataset_path: str) -> Dict[str, Any]:
         raise
 
     except Exception as e:
-        logger.exception("Unexpected error while generating missing values report")
-        raise CustomException(e)
-    
+        logger.error(
+            f"Error generating missing values report: {str(e)}",exc_info=True)
+        raise CustomException(e, sys) from e
 
 
 def generate_recommendations(report_df: pd.DataFrame) -> List[str]:
@@ -172,5 +173,6 @@ def get_dataset_info(dataset_path: str) -> dict:
         }
     
     except Exception as e:
-        logger.exception("Failed to retrieve dataset info")
-        raise CustomException(e)
+        logger.error(
+            f"Error retrieving dataset info: {str(e)}",exc_info=True)
+        raise CustomException(e, sys) from e
