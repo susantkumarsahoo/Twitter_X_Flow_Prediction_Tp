@@ -15,7 +15,7 @@ logger = get_logger(__name__)
 # -----------------------------------------------------------------------------
 try:
     from src.constants.paths import dataset_path
-    from src.backend_api.flask_helper import get_complaint_report
+    from src.backend_api.flask_helper import get_complaint_report,apply_pivot_examples
     CUSTOM_IMPORTS = True
     logger.info("Custom Flask modules loaded successfully")
 except ImportError as e:
@@ -62,6 +62,36 @@ def complaint_report():
 
         logger.info("Complaint report generated successfully")
         return jsonify(report)
+
+    except FileNotFoundError:
+        logger.warning("Dataset file not found | path=%s", data_path)
+        return (
+            jsonify(
+                {
+                    "error": "Dataset file not found",
+                    "path": data_path,
+                }
+            ),
+            404,
+        )
+
+    except Exception as e:
+        logger.exception("Unhandled error while generating complaint report")
+        raise CustomException(e)
+
+@app.route("/apply_pivot_data", methods=["GET"])
+def apply_pivot_data():
+    """
+    Endpoint to return complaint pivot report.
+    """
+    try:
+        data_path = request.args.get("dataset_path", dataset_path)
+        logger.info("Generating complaint report | path=%s", data_path)
+
+        report = apply_pivot_examples(data_path)  # Call a different function
+
+        logger.info("Complaint report generated successfully")
+        return jsonify(report.to_dict(orient='records'))  # Convert to JSON
 
     except FileNotFoundError:
         logger.warning("Dataset file not found | path=%s", data_path)

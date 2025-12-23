@@ -8,7 +8,7 @@ from src.logging.logger import get_logger
 from src.exceptions.exception import CustomException
 from src.constants.paths import dataset_path
 from src.visualization.st_plt import (create_complaints_visualization, process_complaints_data,create_missing_values_chart,
-                                    complaints_status_stacked_bar,complaints_trend_line)
+                                    complaints_status_stacked_bar,complaints_trend_line,unique_value_bar_chart)
 
 from plotly.subplots import make_subplots
 
@@ -112,31 +112,34 @@ def analysis_dashboard(dashboard_type: str, dataset_path: str, uploaded_file: Op
         # ============================================
         with tab1:
             st.subheader("Complaint Information")
-
+            
             try:
                 with st.spinner("📊 Loading dataset info..."):
                     response = flask_api_request_url("/complaint_report", timeout=30)
-
-                    if response.status_code == 200:
-                        data = response.json()
-                        st.json(data)
+                    response_01 = fastapi_api_request_url("/apply_pivot_data", timeout=30)
+                    
+                    if response.status_code == 200 and response_01.status_code == 200:
+                        df_main = pd.DataFrame(response)
+                        df_pivot = pd.DataFrame(response_01)
+                        st.dataframe(df_main)
+                        st.divider()
+                        st.dataframe(df_pivot)
                     else:
-                        st.error(f"❌ Error loading dataset info: {response.text}")
-                        logger.error(f"Error loading dataset info: {response.text}")
-                logger.info("Streamlit blocked due to API unavailability")
+                        error_msg = f"Error loading dataset: {response.text}"
+                        logger.error(error_msg)
+                        st.error(f"❌ {error_msg}")
+                        
             except CustomException as ce:
                 logger.error(f"CustomException in Complaint Info: {ce}")
                 st.error("❌ A custom error occurred while loading dataset info.")
                 with st.expander("Show error details"):
                     st.code(str(ce))
-
+                    
             except Exception as e:
                 logger.exception("Unexpected error in Complaint Info")
                 st.error("❌ An unexpected error occurred.")
                 with st.expander("Show error details"):
                     st.code(str(e))
-                logger.error(f"Unexpected error in Complaint Info: {e}")
-                logger.info("Streamlit blocked due to API unavailability")
         # ============================================
         # TAB 2: DATA TABLE
         # ============================================
@@ -437,6 +440,17 @@ def analysis_dashboard(dashboard_type: str, dataset_path: str, uploaded_file: Op
                     else:
                         st.info("ℹ️ No time series data found in the dataset.")
                         logger.info("No time series data to visualize")
+
+                    st.divider()
+
+                    # Unique values visualization
+                    fig_06 = unique_value_bar_chart(dataset_path)
+                    if fig_06 is not None:
+                        st.plotly_chart(fig_06, use_container_width=True)
+                        logger.info("Unique values visualization loaded")
+                    else:
+                        st.info("ℹ️ No unique values found in the dataset.")
+                        logger.info("No unique values to visualize")
 
                     logger.info("Visualization loaded")
 

@@ -372,3 +372,56 @@ def complaints_trend_line(dataset_path: str):
     )
 
     return fig
+
+import pandas as pd
+import plotly.express as px
+
+def unique_value_bar_chart(dataset_path: str):
+    """
+    Reads complaint dataset and returns an interactive Plotly bar chart
+    showing the number of unique values per selected column.
+    """
+    # Load dataset
+    df = pd.read_excel(dataset_path)
+
+    # Columns to analyze
+    cols = [
+        'SHIFT DUTY', 'QUERY/REQUEST/COMPLAINT',
+        'COMPLAINT DETAILS', 'COMPLAINT NUMBER', 'SECTION', 'SUB-DIVISION',
+        'DIVISION', 'CIRCLE', 'COMPLAINT TYPE', 'CONSUMER NUMBER',
+        'MOBILE NUMB', 'DEPT', 'CLOSED/OPEN', 'TWEET-LINK',
+        'COMPLAINANT NAME'
+    ]
+
+    # Compute unique counts
+    unique_counts = {col: df[col].nunique() for col in cols}
+    unique_df = pd.DataFrame(list(unique_counts.items()), columns=['Column', 'Unique Values'])
+
+    # Build colorful interactive bar chart
+    fig = px.bar(
+        unique_df,
+        x='Column',
+        y='Unique Values',
+        text='Unique Values',
+        color='Unique Values',  # adds color scale
+        color_continuous_scale='Rainbow',  # vibrant palette
+        title='🌈 Unique Value Counts per Column',
+        labels={'Unique Values': 'Number of Unique Entries'},
+    )
+
+    # Layout tweaks for more style
+    fig.update_traces(texttemplate='%{text}', textposition='outside')
+    fig.update_layout(
+        xaxis_tickangle=-45,
+        template='plotly_dark',  # dark theme for contrast
+        yaxis_title='Unique Value Count',
+        xaxis_title='Column Name',
+        font=dict(size=12, color='white'),
+        title_font=dict(size=18, color='gold'),
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(30,30,30,1)',
+        width=1400, # custom width in pixels 
+        height=600 # custom height in pixels
+    )
+
+    return fig

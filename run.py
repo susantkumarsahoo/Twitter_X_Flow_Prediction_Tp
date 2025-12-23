@@ -123,8 +123,8 @@ def run_servers():
     
     # Check if files exist
     required_files = {
-        'main.py': 'FastAPI backend',
-        'app.py': 'Streamlit frontend'
+        'fastapi_app.py': 'FastAPI backend',
+        'streamlit_app.py': 'Streamlit frontend'
     }
     
     optional_files = {
@@ -178,7 +178,7 @@ def run_servers():
         fastapi_process = subprocess.Popen(
             [
                 sys.executable, '-m', 'uvicorn', 
-                'main:app', 
+                'fastapi_app:app', 
                 '--host', '0.0.0.0', 
                 '--port', '8000',
                 '--log-level', 'info',
@@ -249,7 +249,7 @@ def run_servers():
         streamlit_process = subprocess.Popen(
             [
                 sys.executable, '-m', 'streamlit', 'run', 
-                'app.py',
+                'streamlit_app.py',
                 '--server.headless', 'true',
                 '--server.runOnSave', 'false',  # Disable auto-reload
                 '--browser.gatherUsageStats', 'false',
@@ -337,4 +337,4 @@ if __name__ == "__main__":
     
     run_servers()
 
-    
+# python run.py
