@@ -1,91 +1,25 @@
+import os
+import sys
+import time
+import requests
+import pandas as pd
+from typing import Optional
 import streamlit as st
 import plotly.graph_objects as go
-import pandas as pd
-import requests
-from typing import Optional
-import time
 from src.logging.logger import get_logger
 from src.exceptions.exception import CustomException
 from src.constants.paths import dataset_path
+from plotly.subplots import make_subplots
+from src.api.url_api import fastapi_api_request_url, flask_api_request_url
 from src.visualization.st_plt import (create_complaints_visualization, process_complaints_data,create_missing_values_chart,
                                     complaints_status_stacked_bar,complaints_trend_line,unique_value_bar_chart)
 
-from plotly.subplots import make_subplots
 
 
 logger = get_logger(__name__)
 
 FASTAPI_URL = "http://localhost:8000"
 FLASK_URL = "http://localhost:5000"
-
-def fastapi_api_request_url(endpoint: str, timeout: int = 30, max_retries: int = 3):
-    """
-    Make API request with retry logic
-    
-    Parameters:
-        endpoint: API endpoint to call
-        timeout: Request timeout in seconds
-        max_retries: Maximum number of retry attempts
-    
-    Returns:
-        Response object or None if failed
-    """
-    for attempt in range(max_retries):
-        try:
-            response = requests.get(f"{FASTAPI_URL}{endpoint}", timeout=timeout)
-            response.raise_for_status()
-            logger.info("Fast API request successful")
-            return response
-        except requests.exceptions.Timeout:
-            if attempt < max_retries - 1:
-                st.warning(f"⏱️ Request timeout. Retrying... (Attempt {attempt + 2}/{max_retries})")
-                time.sleep(2)
-            else:
-                st.error(f"⏱️ Request timed out after {max_retries} attempts.")
-                return None
-        except requests.exceptions.ConnectionError:
-            st.error("❌ Cannot connect to API. Please ensure the FastAPI server is running.")
-            return None
-        except requests.exceptions.RequestException as e:
-            st.error(f"❌ Request error: {e}")
-            return None
-    
-    return None
-
-def flask_api_request_url(endpoint: str, timeout: int = 30, max_retries: int = 3):
-    """
-    Make API request with retry logic
-    
-    Parameters:
-        endpoint: API endpoint to call
-        timeout: Request timeout in seconds
-        max_retries: Maximum number of retry attempts
-    
-    Returns:
-        Response object or None if failed
-    """
-    for attempt in range(max_retries):
-        try:
-            response = requests.get(f"{FLASK_URL}{endpoint}", timeout=timeout)
-            response.raise_for_status()
-            logger.info("Flask API request successful")
-            return response
-        except requests.exceptions.Timeout:
-            if attempt < max_retries - 1:
-                st.warning(f"⏱️ Request timeout. Retrying... (Attempt {attempt + 2}/{max_retries})")
-                time.sleep(2)
-            else:
-                st.error(f"⏱️ Request timed out after {max_retries} attempts.")
-                return None
-        except requests.exceptions.ConnectionError:
-            st.error("❌ Cannot connect to API. Please ensure the FastAPI server is running.")
-            return None
-        except requests.exceptions.RequestException as e:
-            st.error(f"❌ Request error: {e}")
-            return None
-    
-    return None
-
 
 
 def analysis_dashboard(dashboard_type: str, dataset_path: str, uploaded_file: Optional[object] = None) -> None:
@@ -365,7 +299,7 @@ def analysis_dashboard(dashboard_type: str, dataset_path: str, uploaded_file: Op
                     st.code(str(e))
                 logger.info("Dataset loaded")
         # ============================================
-        # DATASET INFO        
+        # TAB 4: DATASET INFO        
         # ============================================ 
         with tab4:
             st.subheader("Dataset Information")
@@ -395,11 +329,9 @@ def analysis_dashboard(dashboard_type: str, dataset_path: str, uploaded_file: Op
                 logger.info("Dataset info loaded")
 
     # ============================================
-    # VISUALIZATION
+    # TAB 5: VISUALIZATION
     # ============================================
-# ============================================
-    # VISUALIZATION
-    # ============================================
+
         with tab5:
             st.subheader("Visualization")
 
