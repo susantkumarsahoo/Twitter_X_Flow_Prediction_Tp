@@ -5,9 +5,10 @@ import requests
 import streamlit as st
 from src.logging.logger import get_logger
 
+
 logger = get_logger(__name__)
 
-
+API_URL = "http://localhost:8000"
 FASTAPI_URL = "http://localhost:8000"
 FLASK_URL = "http://localhost:5000"
 
@@ -79,3 +80,29 @@ def flask_api_request_url(endpoint: str, timeout: int = 30, max_retries: int = 3
             return None
     
     return None
+
+
+
+def check_api_status():
+    """Check if FastAPI is running and accessible"""
+    try:
+        logger.info("Checking FastAPI healthcheck")
+        response = requests.get(f"{API_URL}/healthcheck", timeout=3)
+        response.raise_for_status()
+        return True, response.json()
+ 
+    except requests.exceptions.ConnectionError:
+        logger.warning("FastAPI connection refused")
+        return False, {"message": "Cannot connect to API"}
+ 
+    except requests.exceptions.Timeout:
+        logger.warning("FastAPI connection timeout")
+        return False, {"message": "Connection timeout"}
+ 
+    except requests.exceptions.HTTPError as e:
+        logger.error("FastAPI returned HTTP error", exc_info=True)
+        return False, {"message": str(e)}
+ 
+    except Exception as e:
+        logger.exception("Unexpected error while checking API status")
+        return False, {"message": str(e)}

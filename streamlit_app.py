@@ -2,12 +2,15 @@ import streamlit as st
 import requests
 import pandas as pd
 from datetime import datetime
+import sys
+from pathlib import Path
 
 from src.logging.logger import get_logger
 from src.exceptions.exception import CustomException
+from src.constants.paths import dataset_path
+from src.api.url_api import fastapi_api_request_url, flask_api_request_url, check_api_status
 
-
-
+# streamlit_app.py
 
 # -----------------------------------------------------------------------------
 # Logger
@@ -24,11 +27,12 @@ except ImportError as e:
     logger.exception("Failed to import Streamlit helper modules")
     st.error("⚠️ Unable to import custom modules. Please check your project structure.")
     dataset_path = "data/dataset.xlsx"
+    analysis_dashboard = None
 
 # -----------------------------------------------------------------------------
 # API Configuration
 # -----------------------------------------------------------------------------
-API_URL = "http://localhost:8000"
+# API_URL = "http://localhost:8000"
 
 # -----------------------------------------------------------------------------
 # Page Configuration
@@ -39,33 +43,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-
-# -----------------------------------------------------------------------------
-# API STATUS CHECK
-# -----------------------------------------------------------------------------
-def check_api_status():
-    """Check if FastAPI is running and accessible"""
-    try:
-        logger.info("Checking FastAPI healthcheck")
-        response = requests.get(f"{API_URL}/healthcheck", timeout=3)
-        response.raise_for_status()
-        return True, response.json()
-
-    except requests.exceptions.ConnectionError:
-        logger.warning("FastAPI connection refused")
-        return False, {"message": "Cannot connect to API"}
-
-    except requests.exceptions.Timeout:
-        logger.warning("FastAPI connection timeout")
-        return False, {"message": "Connection timeout"}
-
-    except requests.exceptions.HTTPError as e:
-        logger.error("FastAPI returned HTTP error", exc_info=True)
-        return False, {"message": str(e)}
-
-    except Exception as e:
-        logger.exception("Unexpected error while checking API status")
-        raise CustomException(e)
 
 # -----------------------------------------------------------------------------
 # SIDEBAR
@@ -81,7 +58,8 @@ with st.sidebar:
             "🔮 Twitter Flow Prediction",
             "🕒 Time Series Analysis",
             "📝 Sentiment Analysis",
-            "🤖 AI Chatbot",
+            "🗂️ CRM Database",
+            "🤖 AI Chatbot"
         ],
         label_visibility="collapsed",
     )
@@ -93,16 +71,16 @@ with st.sidebar:
         "Upload your data",
         type=["csv", "xlsx", "json"],
     )
-
+ 
     if uploaded_file:
         logger.info("File uploaded | name=%s", uploaded_file.name)
         st.success(f"✅ '{uploaded_file.name}' uploaded!")
-
+ 
     st.divider()
-
+ 
     st.header("🔌 API Status")
     is_connected, api_data = check_api_status()
-
+    
     if is_connected:
         st.success("✅ API Connected")
         if api_data.get("dataset_available"):
@@ -113,13 +91,13 @@ with st.sidebar:
         st.error("❌ API Disconnected")
         with st.expander("Show error details"):
             st.code(api_data.get("message", "Unknown error"))
-
+ 
     if st.button("🔄 Refresh API Status", use_container_width=True):
         logger.info("API status refresh triggered")
         st.rerun()
-
+ 
     st.divider()
-
+ 
     with st.expander("ℹ️ Dashboard Info"):
         st.info(
             f"""
@@ -136,23 +114,25 @@ with st.sidebar:
 if not is_connected:
     st.title("⚠️ API Connection Required")
     st.error("Cannot connect to FastAPI backend. Please ensure the server is running.")
+    st.info("""
+    **Troubleshooting Steps:**
+    1. Ensure FastAPI server is running on http://localhost:8000
+    2. Check if the port 8000 is not blocked
+    3. Verify API endpoint: /healthcheck
+    """)
     logger.warning("Streamlit blocked due to API unavailability")
-
+ 
 else:
     try:
         logger.info("Rendering dashboard | type=%s", dashboard_type)
-        analysis_dashboard(dashboard_type, dataset_path, uploaded_file)
-
-    except NameError:
-        logger.error("analysis_dashboard not found")
-        st.error("⚠️ Dashboard module not found.")
-
+        
+        if analysis_dashboard is None:
+            st.error("⚠️ Dashboard module not found. Please check import configuration.")
+        else:
+            analysis_dashboard(dashboard_type, dataset_path, uploaded_file)
+ 
     except Exception as e:
         logger.exception("Unhandled error in Streamlit dashboard")
         st.error("❌ An unexpected error occurred while loading the dashboard.")
-        raise CustomException(e)
-
-
-
-
-
+        with st.expander("Show error details"):
+            st.code(str(e))
