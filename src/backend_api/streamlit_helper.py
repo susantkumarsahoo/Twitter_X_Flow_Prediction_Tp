@@ -13,7 +13,8 @@ from src.logging.logger import get_logger
 from src.exceptions.exception import CustomException
 from src.constants.paths import dataset_path
 from plotly.subplots import make_subplots
-
+from src.api.url_api import fastapi_api_request_url, flask_api_request_url
+from src.api.st_analysis_tab_01 import display_complaint_information
 from src.api.st_helper import complaint_overview_dashboard
 
 
@@ -110,8 +111,12 @@ def analysis_dashboard(
 
             st.divider()
 
-            complaint_overview_dashboard()
+            display_complaint_information()
+
+
             logger.info("Complaint overview dashboard rendered.")
+
+
 
 
             # --------------------------------------------------

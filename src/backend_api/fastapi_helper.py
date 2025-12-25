@@ -178,3 +178,19 @@ def get_dataset_info(dataset_path: str) -> dict:
         logger.error(
             f"Error retrieving dataset info: {str(e)}",exc_info=True)
         raise CustomException(e, sys) from e
+    
+
+
+
+
+import pandas as pd
+
+def get_complaint_report(datapath, column_name='COMPLAINT TYPE'):
+    """
+    Loads a CSV from datapath and returns value counts for a specific column.
+    """
+    # Load the data from the provided path
+    df = pd.read_excel(datapath)
+    
+    # Return the frequency of unique values in the column
+    return df[column_name].value_counts()

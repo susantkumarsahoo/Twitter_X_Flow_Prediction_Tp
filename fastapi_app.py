@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 from src.constants.paths import dataset_path
 
-from src.backend_api.fastapi_helper import report_missing_values, get_dataset_info
+from src.backend_api.fastapi_helper import report_missing_values, get_dataset_info, get_complaint_report
     
 
 logger = get_logger(__name__)
@@ -125,6 +125,21 @@ def get_dataset_info_endpoint():
         return get_dataset_info(dataset_path=dataset_path)
     except Exception as e:
         logger.exception("Failed to fetch dataset info")
+        raise CustomException(e)
+    
+
+@app.get("/read_complaint_counts")
+def get_complaint_counts_endpoint():
+    try:
+        # Call the function we created earlier
+        counts_series = get_complaint_report(datapath=dataset_path)
+        
+        # IMPORTANT: Convert Series to Dictionary so FastAPI can return JSON
+        return counts_series.to_dict()
+        
+    except Exception as e:
+        logger.exception("Failed to fetch complaint counts")
+        # Ensure CustomException is defined or use HTTPException
         raise CustomException(e)
 
 # -----------------------------------------------------------------------------

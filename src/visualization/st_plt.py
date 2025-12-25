@@ -1,6 +1,9 @@
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import plotly.express as px
+import plotly.graph_objects as go
+
 
 def create_complaints_visualization(data_path):
     """
@@ -422,6 +425,87 @@ def unique_value_bar_chart(dataset_path: str):
         paper_bgcolor='rgba(30,30,30,1)',
         width=1400, # custom width in pixels 
         height=600 # custom height in pixels
+    )
+
+    return fig
+
+
+
+
+import plotly.express as px
+
+import pandas as pd
+import plotly.express as px
+
+import pandas as pd
+import plotly.express as px
+
+def plot_complaint_pie_chart(data_path, column_name='COMPLAINT TYPE',
+                             title="Complaint Distribution", width=1400, height=1100):
+    """
+    Reads complaint data from a file and returns an interactive donut-style pie chart.
+
+    Parameters:
+        data_path (str): Path to the CSV/Excel file containing complaint data
+        column_name (str): Column name to analyze (default: 'COMPLAINT TYPE')
+        title (str): Chart title
+        width (int): Chart width in pixels
+        height (int): Chart height in pixels
+    """
+    # Load data (auto-detect CSV or Excel)
+    if data_path.endswith(".csv"):
+        df = pd.read_csv(data_path)
+    elif data_path.endswith((".xls", ".xlsx")):
+        df = pd.read_excel(data_path)
+    else:
+        raise ValueError("Unsupported file format. Use .csv, .xls, or .xlsx")
+
+    # Get complaint counts
+    complaint_counts = df[column_name].value_counts()
+
+    # Define a bold, deep color palette
+
+    color_palette = [
+        "#1f77b4",  # deep blue
+        "#ff7f0e",  # vivid orange
+        "#2ca02c",  # strong green
+        "#d62728",  # deep red
+        "#9467bd",  # rich purple
+        "#8c564b",  # earthy brown
+        "#e377c2",  # magenta
+        "#7f7f7f",  # dark gray
+        "#bcbd22",  # olive
+        "#17becf"   # teal
+    ]
+
+    # Create pie chart with dark background
+    fig = px.pie(
+        names=complaint_counts.index,
+        values=complaint_counts.values,
+        title=title,
+        hole=0.4,
+        color=complaint_counts.index,
+        color_discrete_sequence=color_palette
+    )
+
+    # Enhance trace details with visible text
+    fig.update_traces(
+        textinfo='percent+label',
+        textfont=dict(color="white", size=14),   # bright text for visibility
+        pull=[0.05] * len(complaint_counts),
+        hovertemplate="<b>%{label}</b><br>Count: %{value}<br>Share: %{percent}"
+    )
+
+    # Layout improvements with deep gray background and visible fonts
+    fig.update_layout(
+        title=dict(text=title, x=0.5, font=dict(size=22, family="Arial", color="white")),
+        legend=dict(title="Complaint Type", orientation="h", y=-0.2, x=0.5, xanchor="center",
+                    font=dict(color="white")),   # legend text in white
+        margin=dict(t=50, b=50, l=50, r=50),
+        width=width,
+        height=height,
+        paper_bgcolor="#2f2f2f",   # deep gray outer background
+        plot_bgcolor="#2f2f2f"     # deep gray inner background
     )
 
     return fig
