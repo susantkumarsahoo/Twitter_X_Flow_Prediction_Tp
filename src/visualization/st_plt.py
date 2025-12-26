@@ -509,3 +509,59 @@ def plot_complaint_pie_chart(data_path, column_name='COMPLAINT TYPE',
     )
 
     return fig
+
+
+
+import plotly.express as px
+
+def visualize_report(
+    report_df: pd.DataFrame,
+    category: str,
+    top_n: int = 10
+):
+    """
+    Creates an interactive, colorful bar chart for a selected category.
+    Returns Plotly Figure.
+    """
+
+    filtered_df = (
+        report_df[report_df["Category"] == category]
+        .sort_values("Count", ascending=False)
+        .head(top_n)
+    )
+
+    fig = px.bar(
+        filtered_df,
+        x="Sub-Category",
+        y="Count",
+        color="Count",
+        text="Count",
+        color_continuous_scale=px.colors.sequential.Viridis,
+        title=f"{category} — Top {top_n} Distribution",
+    )
+
+    fig.update_layout(
+        template="plotly_dark",
+        xaxis_title="",
+        yaxis_title="Count",
+        title_x=0.5,
+        font=dict(size=14),
+        height=500,
+        margin=dict(l=40, r=40, t=60, b=80),
+    )
+
+    fig.update_traces(
+        textposition="outside",
+        marker_line_width=1.5
+    )
+
+    return fig
+
+
+
+
+
+
+
+
+

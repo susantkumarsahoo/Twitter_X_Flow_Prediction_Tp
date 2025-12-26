@@ -17,22 +17,10 @@ from src.api.url_api import fastapi_api_request_url, flask_api_request_url
 from src.api.st_analysis_tab_01 import display_complaint_information
 from src.api.st_helper import complaint_overview_dashboard
 
-
 logger = get_logger(__name__)
 
 
 # streamlit_app.py
-
-import streamlit as st
-import pandas as pd
-from typing import Optional
-from pathlib import Path
-
-from src.logging.logger import get_logger
-
-logger = get_logger(__name__)
-
-
 
 def analysis_dashboard(
     dashboard_type: str,
@@ -86,38 +74,14 @@ def analysis_dashboard(
             # Under development notice
             st.warning("🚧 Complaint Overview dashboard is under development.")
 
-            # --------------------------------------------------
-            # KPI Section (6 Columns)
-            # --------------------------------------------------
-            col1, col2, col3, col4, col5, col6 = st.columns(6)
-
-            with col1:
-                st.metric(label="Total Complaints", value=0)
-
-            with col2:
-                st.metric(label="Open Complaints", value=0)
-
-            with col3:
-                st.metric(label="Closed Complaints", value=0)
-
-            with col4:
-                st.metric(label="In Progress", value=0)
-
-            with col5:
-                st.metric(label="Avg Resolution Time", value=0)
-
-            with col6:
-                st.metric(label="High Priority", value=0)
-
             st.divider()
 
             display_complaint_information()
 
+            st.divider()
 
+            # Complaint overview dashboard
             logger.info("Complaint overview dashboard rendered.")
-
-
-
 
             # --------------------------------------------------
             # Quick Links Section

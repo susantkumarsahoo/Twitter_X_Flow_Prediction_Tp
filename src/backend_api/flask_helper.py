@@ -148,3 +148,54 @@ def apply_pivot_examples(dataset_path: str) -> pd.DataFrame:
     return pivot
 
 
+import pandas as pd
+
+def all_data_generate_report(dataset_path) -> None:
+    """
+    Generates a standardized summary report with filters and totals.
+    Output format:
+    Category | Sub-Category | Count
+    """
+    df = pd.read_excel(dataset_path)
+    report_blocks = []
+
+    def add_counts(category_name, series):
+        temp = series.reset_index()
+        temp.columns = ["Sub-Category", "Count"]
+        temp["Category"] = category_name
+        report_blocks.append(temp)
+
+    # Basic value counts
+    add_counts("SHIFT DUTY", df["SHIFT DUTY"].value_counts())
+    add_counts("QUERY/REQUEST/COMPLAINT", df["QUERY/REQUEST/COMPLAINT"].value_counts())
+    add_counts("DIVISION", df["DIVISION"].value_counts())
+    add_counts("CIRCLE", df["CIRCLE"].value_counts())
+    add_counts("DEPT", df["DEPT"].value_counts())
+    add_counts("CLOSED/OPEN", df["CLOSED/OPEN"].value_counts())
+
+    # Filtered counts
+    add_counts("SECTION", df["SECTION"].value_counts()[lambda x: x >= 10])
+    add_counts("SUB-DIVISION", df["SUB-DIVISION"].value_counts()[lambda x: x >= 5])
+    add_counts("COMPLAINANT NAME", df["COMPLAINANT NAME"].value_counts()[lambda x: x >= 20])
+
+    # Totals
+    totals = pd.DataFrame({
+        "Category": [
+            "COMPLAINT NUMBER (Total)",
+            "CONSUMER NUMBER (Total)",
+            "MOBILE NUMB (Total)"
+        ],
+        "Sub-Category": ["Total", "Total", "Total"],
+        "Count": [
+            df["COMPLAINT NUMBER"].count(),
+            df["CONSUMER NUMBER"].count(),
+            df["MOBILE NUMB"].count()
+        ]
+    })
+
+    final_report = pd.concat(report_blocks + [totals], ignore_index=True)
+    return final_report
+
+
+
+
