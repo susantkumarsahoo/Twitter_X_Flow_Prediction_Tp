@@ -22,24 +22,30 @@ def display_complaint_information():
             
             col1, col2, col3, col4, col5, col6 = st.columns(6)
 
-
+            df = pd.read_excel(dataset_path)
+            total_rows, total_columns = df.shape
+            status_counts = df['CLOSED/OPEN'].value_counts()
+            closed_complaints = status_counts.get('Closed', 0)
+            open_complaints = status_counts.get('Open', 0)
+            ninety_days_ago = pd.Timestamp.now() - pd.Timedelta(days=90)    
+            df['90_DAY_OPEN_COMPLAINTS'] = ( (df['DATE'] >= ninety_days_ago) & (df['CLOSED/OPEN'] == 'Open') )
+            ninety_day_open_count = df['90_DAY_OPEN_COMPLAINTS'].sum()
+            thrty_days_ago = pd.Timestamp.now() - pd.Timedelta(days=30)
+            df['30_DAY_OPEN_COMPLAINTS'] = ( (df['DATE'] >= thrty_days_ago) & (df['CLOSED/OPEN'] == 'Open') )
+            thrty_days_ago = df['30_DAY_OPEN_COMPLAINTS'].sum()
             with col1:
-                st.metric(label="Total Complaints", value=0)
-
-
+                st.metric(label="Total Complaints", value=total_rows)
+               
             with col2:
-                st.metric(label="Open Complaints", value=0)
-
+                st.metric(label="Open Complaints", value=open_complaints)
 
             with col3:
-                st.metric(label="Closed/Open Complaints", value=0)
-
+                st.metric(label="Closed Complaints", value=closed_complaints)
             with col4:
-                st.metric(label="90 Day Open Complaints", value=0)
-
+                st.metric(label="90 Day Open Complaints", value=ninety_day_open_count)
 
             with col5:
-                st.metric(label="Avg FRT Time", value=0)
+                st.metric(label="30 Day Open Complaints", value=thrty_days_ago) 
 
 
             with col6:
