@@ -194,3 +194,117 @@ def get_complaint_report(datapath, column_name='COMPLAINT TYPE'):
     
     # Return the frequency of unique values in the column
     return df[column_name].value_counts()
+
+
+
+def apply_pivot_table(dataset_path: str) -> pd.DataFrame:
+    # Load dataset
+    df = pd.read_excel(dataset_path)
+
+    # Ensure required columns exist
+    required = ['COMPLAINT TYPE', 'DEPT', 'CLOSED/OPEN']
+    missing = [c for c in required if c not in df.columns]
+    if missing:
+        raise ValueError(f"Missing required columns: {missing}")
+
+    # Work on a copy and clean text
+    d = df[required].copy()
+
+    # Normalize strings: strip, lower, then title-case
+    def norm(s) -> str:
+        if pd.isna(s):
+            return '(blank)'
+        s = str(s).strip()
+        return '(blank)' if s == '' else s
+
+    d['COMPLAINT TYPE'] = d['COMPLAINT TYPE'].map(norm)
+    d['DEPT'] = d['DEPT'].map(norm)
+    d['CLOSED/OPEN'] = d['CLOSED/OPEN'].map(norm)
+
+    # Optional: unify common variants in complaint types
+    # Map variations to a single canonical form
+    type_map = {
+        'Civil Works': 'Civil works',
+        'NO Power Supply': 'No Power Supply',
+        'Pole Shifting / Lt Sagging': 'Pole Shifting / Lt Sagging',
+        'Transformer Failure / NCC': 'Transformer failure / NCC',
+    }
+    d['COMPLAINT TYPE'] = d['COMPLAINT TYPE'].replace(type_map)
+
+    # Normalize DEPT values to desired set
+    dept_map = {
+        'Commercial': 'Commercial',
+        'O&M': 'O&M',
+        'Operation & Maintenance': 'O&M',
+        'Other': 'Other',
+        'Others': 'Other',
+        '(blank)': '(blank)',
+    }
+    d['DEPT'] = d['DEPT'].map(lambda x: dept_map.get(x, x))
+
+    # Normalize CLOSED/OPEN values to exactly CLOSED / OPEN
+    status_map = {
+        'Closed': 'CLOSED',
+        'closed': 'CLOSED',
+        'CLOSED': 'CLOSED',
+        'OPEN': 'OPEN',
+        'Open': 'OPEN',
+        'open': 'OPEN',
+        '(blank)': '(blank)',
+    }
+    d['CLOSED/OPEN'] = d['CLOSED/OPEN'].map(lambda x: status_map.get(x, x))
+
+    # Build pivot with counts using size (do not set `values`)
+    pivot = d.pivot_table(
+        index='COMPLAINT TYPE',
+        columns=['DEPT', 'CLOSED/OPEN'],
+        aggfunc='size',
+        fill_value=0
+    )
+
+    # Ensure consistent column order
+    desired_depts = ['Commercial', 'O&M', 'Other', '(blank)']
+    desired_status = ['CLOSED', 'OPEN']
+    # Reindex columns to the desired multi-index order, keep missing combinations as 0
+    pivot = pivot.reindex(
+        pd.MultiIndex.from_product([desired_depts, desired_status], names=pivot.columns.names),
+        axis=1,
+        fill_value=0
+    )
+
+    # Add per-department TOTAL columns
+    for dept in desired_depts:
+        closed_col = (dept, 'CLOSED')
+        open_col = (dept, 'OPEN')
+        total_series = pivot.get(closed_col, 0) + pivot.get(open_col, 0)
+        pivot[(dept, 'TOTAL')] = total_series
+
+    # Add GRAND TOTAL across department TOTALs
+    total_cols = [(dept, 'TOTAL') for dept in desired_depts]
+    pivot[('Grand', 'TOTAL')] = pivot[total_cols].sum(axis=1)
+
+    # Sort rows alphabetically (optional: or by Grand TOTAL descending)
+    # pivot = pivot.sort_values(('Grand', 'TOTAL'), ascending=False)
+
+    # Flatten columns to match your readability preference
+    pivot.columns = [f"{lvl0} {lvl1}".strip() for lvl0, lvl1 in pivot.columns]
+
+    # Reset index to have COMPLAINT TYPE as a column
+    pivot = pivot.reset_index()
+    
+    # Add new columns for row-wise totals
+    pivot["Grand Total Open"] = pivot[[col for col in pivot.columns if "OPEN" in col]].sum(axis=1)
+    pivot["Grand Total Closed"] = pivot[[col for col in pivot.columns if "CLOSED" in col]].sum(axis=1)
+
+    # Create total row
+    total_row = {"COMPLAINT TYPE": "Grand Total"}
+    
+    # Sum each column except the first one
+    for col in pivot.columns[1:]:
+        total_row[col] = pivot[col].sum()
+
+    # Append the total row
+    pivot = pd.concat([pivot, pd.DataFrame([total_row])], ignore_index=True)
+
+    return pivot
+

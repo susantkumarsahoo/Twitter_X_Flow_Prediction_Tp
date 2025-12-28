@@ -514,7 +514,7 @@ def plot_complaint_pie_chart(data_path, column_name='COMPLAINT TYPE',
 
 import plotly.express as px
 
-def visualize_report(
+def visualize_reporter_distribution(
     report_df: pd.DataFrame,
     category: str,
     top_n: int = 10
@@ -557,6 +557,59 @@ def visualize_report(
 
     return fig
 
+import plotly.express as px
+
+def visualize_report(
+    report_df: pd.DataFrame,
+    category: str,
+    top_n: int = 30
+):
+    """
+    Creates an interactive, colorful bar chart for a selected category.
+    Returns Plotly Figure.
+    """
+
+    filtered_df = (
+        report_df[report_df["Category"] == category]
+        .sort_values("Count", ascending=False)
+        .head(top_n)
+    )
+
+    fig = px.bar(
+        filtered_df,
+        x="Sub-Category",
+        y="Count",
+        color="Count",
+        text="Count",
+        color_continuous_scale=px.colors.sequential.Viridis,
+        title=f"{category} — Top {top_n} Distribution",
+    )
+
+    # Layout improvements
+    fig.update_layout(
+        template="plotly_dark",
+        xaxis_title="",
+        yaxis_title="Count",
+        title_x=0.5,
+        font=dict(size=15, family="Arial Black"),
+        height=550,
+        margin=dict(l=40, r=40, t=70, b=80),
+        hovermode="x unified",  # unified hover for better interactivity
+        plot_bgcolor="rgba(0,0,0,0)",  # transparent background
+        paper_bgcolor="rgba(0,0,0,0)",
+    )
+
+    # Trace improvements
+    fig.update_traces(
+        textposition="outside",
+        marker_line_width=1.5,
+        hovertemplate="<b>%{x}</b><br>Count: %{y}<extra></extra>",  # clean hover info
+    )
+
+    # Add animation-like transition for smoother updates
+    fig.update_layout(transition_duration=500)
+
+    return fig
 
 
 

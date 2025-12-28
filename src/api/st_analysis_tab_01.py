@@ -33,6 +33,12 @@ def display_complaint_information():
             thrty_days_ago = pd.Timestamp.now() - pd.Timedelta(days=30)
             df['30_DAY_OPEN_COMPLAINTS'] = ( (df['DATE'] >= thrty_days_ago) & (df['CLOSED/OPEN'] == 'Open') )
             thrty_days_ago = df['30_DAY_OPEN_COMPLAINTS'].sum()
+            df['DATE'] = pd.to_datetime(df['DATE'])
+            last_date = df['DATE'].max()
+            last_day_rows = df[df['DATE'] == last_date]
+            counts = last_day_rows['DATE'].value_counts()
+            total_count = counts.sum()
+
             with col1:
                 st.metric(label="Total Complaints", value=total_rows)
                
@@ -47,9 +53,8 @@ def display_complaint_information():
             with col5:
                 st.metric(label="30 Day Open Complaints", value=thrty_days_ago) 
 
-
             with col6:
-                st.metric(label="High Priority", value=0)            
+                st.metric(label="Last Day Complaints", value=counts)           
             
             if response.status_code == 200:
                 # Convert JSON dictionary back to Series → DataFrame
@@ -58,7 +63,7 @@ def display_complaint_information():
                 complaint_df = complaint_counts.reset_index()
                 complaint_df.columns = ["Complaint Type", "Count"]
                 
-                st.success("✅ Data loaded successfully from FastAPI!")
+                st.success("✅ Data loaded successfully from API!")
 
 
                 complaint_report_dashboard(complaint_df)
@@ -66,10 +71,12 @@ def display_complaint_information():
                 logger.info("Complaint data loaded from FastAPI")
                         
             else:
-                raise CustomException(f"Failed to fetch data. Status code: {response.status_code}")            
-
+                raise CustomException(f"Failed to fetch data. Status code: {response.status_code}")   
+                     
             st.divider()
 
+            st.divider()
+            st.write("## 📊 Data Distributions")
             # Pie chart visualization
             pie_chart = plot_complaint_pie_chart(dataset_path, column_name='COMPLAINT TYPE')
             st.plotly_chart(pie_chart, use_container_width=True)
@@ -96,7 +103,7 @@ def display_complaint_information():
             # ===============================
             # Interactive Filters
             # ===============================
-            st.write("## 🔍 Filter & Visualize Data")
+            st.write("## 🔍 All Data & Visualization")
 
             available_categories = sorted(all_data_report["Category"].unique())
 
@@ -138,10 +145,12 @@ def display_complaint_information():
                     theme="streamlit"
                 )
 
+                st.divider()
+
                 # ===============================
                 # Filtered Data View
                 # ===============================
-                st.write("### 📋 Filtered Data Preview")
+                st.write("### 📋 Data Report Preview")
 
                 st.dataframe(
                     filtered_df.sort_values("Count", ascending=False).head(top_n),
@@ -152,9 +161,10 @@ def display_complaint_information():
             st.divider()
 
             st.info(
-                "⚠️ This dashboard is under active development. "
-                "Advanced analytics and AI-driven insights will be added soon."
+                "⚠️ This application is under active development. "
+                "Advanced analytics and AI-driven insights will be available soon."
             )
+
 
     except CustomException as ce:
         logger.error(str(ce))

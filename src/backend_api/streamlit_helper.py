@@ -15,6 +15,7 @@ from src.constants.paths import dataset_path
 from plotly.subplots import make_subplots
 from src.api.url_api import fastapi_api_request_url, flask_api_request_url
 from src.api.st_analysis_tab_01 import display_complaint_information
+from src.api.st_analysis_tab_02 import display_missing_values_report
 from src.api.st_helper import complaint_overview_dashboard
 
 logger = get_logger(__name__)
@@ -69,43 +70,39 @@ def analysis_dashboard(
         # ----------------------------------------------
 
         with tab1:
-            st.subheader("Complaint Overview")
-
-            # Under development notice
-            st.warning("🚧 Complaint Overview dashboard is under development.")
-
-            st.divider()
-
             display_complaint_information()
 
             st.divider()
 
             # Complaint overview dashboard
             logger.info("Complaint overview dashboard rendered.")
+            logger.info("Tab 1: Complited successfully.")
 
-            # --------------------------------------------------
-            # Quick Links Section
-            # --------------------------------------------------
-            st.warning("🚧 Visualizations dashboard is under development.")
+        # ----------------------------------------------
+        # TAB 2: DATA TABLE
+        # ----------------------------------------------
+        with tab2:
+            display_missing_values_report()
+            # under development
+            st.warning("🚧 This Project is under development.")
 
-            st.markdown("### 🔗 Quick Links")
 
-            quick_option = st.selectbox(
-                "Choose a feature to explore:",
-                [
-                    "Select an option",
-                    "Consumer History",
-                    "Consumer Ledger",
-                    "Consumer Bill Wise Balances",
-                    "Bill Calculator",
-                    "Adhoc Reports",
-                ],
-            )
+        # ----------------------------------------------
+        # TAB 3: SUMMARY
+        # ----------------------------------------------
+        with tab3:
+            st.subheader("Summary")
+            # under development
+            st.warning("🚧 This Project is under development.")
 
-            if quick_option != "Select an option":
-                st.info(f"📄 **{quick_option}** feature is under development.")
-            
 
+        # ----------------------------------------------
+        # TAB 4: DATASET INFORMATION
+        # ----------------------------------------------
+        with tab4:
+            st.subheader("Dataset Information")
+            # under development
+            st.warning("🚧 This Project is under development.")
 
         # ----------------------------------------------
         # TAB 5: VISUALIZATIONS
@@ -113,7 +110,7 @@ def analysis_dashboard(
         with tab5:
             st.subheader("Data Visualizations")
             # under development
-            st.warning("🚧 Data Visualizations dashboard is under development.")
+            st.warning("🚧 This Project is under development.")
 
 
         # ----------------------------------------------

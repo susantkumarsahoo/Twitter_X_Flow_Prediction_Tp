@@ -173,6 +173,15 @@ def all_data_generate_report(dataset_path) -> None:
     add_counts("DEPT", df["DEPT"].value_counts())
     add_counts("CLOSED/OPEN", df["CLOSED/OPEN"].value_counts())
 
+    add_counts(
+        "TWEET-LINK SUMMARY",
+        pd.Series({
+            "Total": df["TWEET-LINK"].count(),
+            "DM": df.loc[df["TWEET-LINK"] == "DM", "TWEET-LINK"].count(),
+            "Non-DM": df.loc[df["TWEET-LINK"] != "DM", "TWEET-LINK"].count()
+        })
+    )
+
     # Filtered counts
     add_counts("SECTION", df["SECTION"].value_counts()[lambda x: x >= 10])
     add_counts("SUB-DIVISION", df["SUB-DIVISION"].value_counts()[lambda x: x >= 5])

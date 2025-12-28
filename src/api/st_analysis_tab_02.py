@@ -14,9 +14,6 @@ from src.api.url_api import fastapi_api_request_url, flask_api_request_url
 from src.visualization.st_plt import (create_complaints_visualization, process_complaints_data,create_missing_values_chart,
                                     complaints_status_stacked_bar,complaints_trend_line,unique_value_bar_chart)
 
-from src.api.st_analysis_tab_02 import display_missing_values_report
-
-
 
 logger = get_logger(__name__)
 

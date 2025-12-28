@@ -15,7 +15,7 @@ def complaint_report_dashboard(complaint_df):
 
     # --- Left column: Raw table ---
     with col1:
-        st.markdown("### 📋 Raw Counts")
+        st.markdown("### 📋 Complaint Type Counts")
         st.dataframe(
             complaint_df,
             use_container_width=True,
