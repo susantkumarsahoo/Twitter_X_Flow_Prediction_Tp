@@ -1,10 +1,10 @@
+import sys
+import os
 import streamlit as st
 import requests
 import pandas as pd
 from datetime import datetime
-import sys
 from pathlib import Path
-
 from src.logging.logger import get_logger
 from src.exceptions.exception import CustomException
 from src.constants.paths import dataset_path
@@ -67,14 +67,29 @@ with st.sidebar:
     st.divider()
 
     st.header("📁 Data Source")
+
     uploaded_file = st.file_uploader(
         "Upload your data",
-        type=["csv", "xlsx", "json"],
+        type=["csv", "xlsx", "json"]
     )
- 
-    if uploaded_file:
-        logger.info("File uploaded | name=%s", uploaded_file.name)
-        st.success(f"✅ '{uploaded_file.name}' uploaded!")
+
+    # Define save directory
+    SAVE_DIR = "data/raw"
+
+    # Create directory if it doesn't exist
+    os.makedirs(SAVE_DIR, exist_ok=True)
+
+    if uploaded_file is not None:
+        # Full path where file will be saved
+        file_path = os.path.join(SAVE_DIR, uploaded_file.name)
+
+        # Save file
+        with open(file_path, "wb") as f:
+            f.write(uploaded_file.getbuffer())
+
+        logger.info("File saved | path=%s", file_path)
+
+        st.success(f"✅ '{uploaded_file.name}' uploaded and saved to `{SAVE_DIR}/`")
  
     st.divider()
  

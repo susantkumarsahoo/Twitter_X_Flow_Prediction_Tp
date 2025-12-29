@@ -82,7 +82,7 @@ def analysis_dashboard(
         # TAB 2: DATA TABLE
         # ----------------------------------------------
         with tab2:
-            display_missing_values_report()
+            #display_missing_values_report()
             # under development
             st.warning("🚧 This Project is under development.")
 

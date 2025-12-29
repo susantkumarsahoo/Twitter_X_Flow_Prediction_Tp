@@ -124,8 +124,10 @@ def get_dataset_info_endpoint():
     try:
         return get_dataset_info(dataset_path=dataset_path)
     except Exception as e:
-        logger.exception("Failed to fetch dataset info")
-        raise CustomException(e)
+        raise CustomException(
+            message="Error while fetching complaint info",
+            error_details=str(e)
+        )
     
 
 @app.get("/read_complaint_counts")
@@ -138,10 +140,10 @@ def get_complaint_counts_endpoint():
         return counts_series.to_dict()
         
     except Exception as e:
-        logger.exception("Failed to fetch complaint counts")
-        # Ensure CustomException is defined or use HTTPException
-        raise CustomException(e)
-
+        raise CustomException(
+            message="Error while fetching complaint counts",
+            error_details=str(e)
+        )
 # -----------------------------------------------------------------------------
 # Local run
 # -----------------------------------------------------------------------------

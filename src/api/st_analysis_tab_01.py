@@ -56,7 +56,13 @@ def display_complaint_information():
             with col6:
                 st.metric(label="Last Day Complaints", value=counts)           
             
+            if response is None:
+                st.error("❌ Backend API is not responding")
+                return
+
             if response.status_code == 200:
+                            
+                             
                 # Convert JSON dictionary back to Series → DataFrame
                 data_dict = response.json()
                 complaint_counts = pd.Series(data_dict).sort_values(ascending=False)

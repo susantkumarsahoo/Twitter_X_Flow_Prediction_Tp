@@ -133,6 +133,16 @@ TARGET_COLUMN = "megawatthours"
 # =====================================================================
 # DATA PATHS
 # =====================================================================
-dataset_path = r"C:\Users\TPWODL\New folder_Content\Twitter_X_Flow_Prediction_Tp\data\raw\twitter_x_data.xlsx"
+
+dataset_path = r"C:\Users\LENOVO\MachineLearningProhects\Twitter_X_Flow_Prediction_Tp\data\raw\twitter_x_data.xlsx"
+
+# dataset_path = r"C:\Users\TPWODL\New folder_Content\Twitter_X_Flow_Prediction_Tp\data\raw\twitter_x_data.xlsx"
+
 cols_to_drop = ["hour", "day_of_week", "day_of_month", "day_of_year"]
 seq_length = 7
+
+
+
+
+
+
